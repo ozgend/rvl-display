@@ -1,0 +1,17 @@
+.vscode/
+node_modules
+dist/
+build/
+coverage/
+bin/
+obj/
+test/
+.DS_Store
+*.log
+.env*
+.pio
+*.bak
+*.tmp
+*.zip
+*.tar.gz
+*.txt
