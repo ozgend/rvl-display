@@ -1,7 +1,27 @@
 namespace Rvl.Host.App;
 
-public class RvlMonitorData
+public interface IRvlSensorMonitor
 {
+    bool Initialize();
+    RvlMonitorData Poll();
+}
+
+public interface IRvlDevicePayload<T>
+{
+    byte Type { get; }
+}
+
+public interface IRvlHostCliInput
+{
+    ConsoleModifiers Modifiers { get; }
+    ConsoleKey Key { get; }
+    RvlCommandData Command { get; }
+}
+
+public class RvlMonitorData : IRvlDevicePayload<RvlMonitorData>
+{
+    public byte Type => Constants.Report.Type.Data;
+
     public int CpuTemperature { get; internal set; }
     public int CpuUtilization { get; internal set; }
     public string CpuName { get; internal set; }
@@ -18,40 +38,13 @@ public class RvlMonitorData
         GpuUtilization = -1;
         GpuName = "Unknown";
     }
-
-    static public RvlMonitorData New(int cpuTemp, int cpuUtil, string cpuName, int gpuTemp, int gpuUtil, string gpuName)
-    {
-        return new RvlMonitorData
-        {
-            CpuTemperature = cpuTemp,
-            CpuUtilization = cpuUtil,
-            CpuName = cpuName,
-            GpuTemperature = gpuTemp,
-            GpuUtilization = gpuUtil,
-            GpuName = gpuName
-        };
-    }
 }
 
-public class RvlCommandData
+public class RvlCommandData(byte command, byte? value = 0) : IRvlDevicePayload<RvlCommandData>
 {
-    public byte Command { get; internal set; }
-    public byte Value { get; internal set; }
+    public byte Type => Constants.Report.Type.Command;
 
-    public RvlCommandData(byte command, byte value = Constants.Report.Null)
-    {
-        Command = command;
-        Value = value;
-    }
-
-    static public RvlCommandData New(byte command, byte value = Constants.Report.Null)
-    {
-        return new RvlCommandData(command, value);
-    }
+    public byte Command { get; internal set; } = command;
+    public byte Value { get; internal set; } = value ?? 0;
 }
 
-public interface IRvlSensorMonitor
-{
-    bool Initialize();
-    RvlMonitorData Poll();
-}
