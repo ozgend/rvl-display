@@ -8,8 +8,6 @@
 #include "Free_Fonts.h"
 #include "display_layout.h"
 
-#define PIN_TFT_LIGHT 22
-
 uint8_t const desc_hid_report[] = {TUD_HID_REPORT_DESC_GENERIC_INOUT(64)};
 bool ledState = false;
 bool willBlinkLed = true;
@@ -82,19 +80,19 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
     }
     else if (commandName == Constants::Report::Command::SetBrightnessOff)
     {
-      analogWrite(PIN_TFT_LIGHT, 0);
+      analogWrite(TFT_BL, 0);
     }
     else if (commandName == Constants::Report::Command::SetBrightnessLow)
     {
-      analogWrite(PIN_TFT_LIGHT, 64);
+      analogWrite(TFT_BL, 64);
     }
     else if (commandName == Constants::Report::Command::SetBrightnessMedium)
     {
-      analogWrite(PIN_TFT_LIGHT, 128);
+      analogWrite(TFT_BL, 128);
     }
     else if (commandName == Constants::Report::Command::SetBrightnessHigh)
     {
-      analogWrite(PIN_TFT_LIGHT, 255);
+      analogWrite(TFT_BL, 255);
     }
     else if (commandName == Constants::Report::Command::LedOff)
     {
@@ -121,8 +119,8 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
 void setup()
 {
   pinMode(PIN_LED, OUTPUT);
-  pinMode(PIN_TFT_LIGHT, OUTPUT);
-  digitalWrite(PIN_TFT_LIGHT, HIGH);
+  pinMode(TFT_BL, OUTPUT);
+  digitalWrite(TFT_BL, HIGH);
 
   SPI.begin();
   tft.init();
