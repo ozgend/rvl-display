@@ -4,8 +4,8 @@ a custom hardware to monitor system sensors via 1.8" TFT LCD, powered by a Raspb
 
 ## Hardware
 
-- **Controller**: Raspberry Pi Pico (RP2040).
-- **Display**: 1.8" TFT LCD (SPI).
+- **Controller**: Raspberry Pi Pico Zero ([RP2040-zero](./docs/rp2040-zero.png)).
+- **Display**: 1.8" 128x160 TFT LCD ([ST7735S](./docs/st7735s.png)).
 - **Connection**: Direct mainboard USB 9 Pin 2.0 header
 - **VID:PID**: `0x5EED:0xFACE` (denolk rvl-display)
 
@@ -37,18 +37,16 @@ a custom hardware to monitor system sensors via 1.8" TFT LCD, powered by a Raspb
    ```ini
    Rvl.Host.App
    | exit=       [CTRL+C]
-   | bootloader= [F]
-   | ledON=      [O]
-   | ledOFF=     [P]
+   | messages=   [CTRL+1..5]
    | brightness= [B]right|[N]ormal|[M]in
    | clear=      [C]
-   | restart=    [R]
-   | messages=   [CTRL+1..4]
+   | restart=    [Alt+R]
+   | bootloader= [Alt+F]
    ```
 
 ### TODO
 
 - [ ] Add fan sensors
-- [ ] Tidy up the HID host + win native service
-- [ ] 3D print a custom case for the display and components
+- [ ] Windows native service
+- [ ] 3D print a custom case
 - [ ] display temp colors based on thresholds

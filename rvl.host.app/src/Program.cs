@@ -13,8 +13,8 @@ var commandMap = new Dictionary<(ConsoleKey, ConsoleModifiers), (RvlCommandData,
     { (ConsoleKey.B, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.SetBrightnessHigh), "SetBrightnessHigh") },
     { (ConsoleKey.N, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.SetBrightnessMedium), "SetBrightnessMedium") },
     { (ConsoleKey.M, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.SetBrightnessLow), "SetBrightnessLow") },
-    { (ConsoleKey.O, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.LedOn), "LedOn") },
-    { (ConsoleKey.P, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.LedOff), "LedOff") },
+    // { (ConsoleKey.O, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.LedOn), "LedOn") },
+    // { (ConsoleKey.P, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.LedOff), "LedOff") },
 };
 
 var device = new RvlDevice();
@@ -67,7 +67,7 @@ if (!System.Diagnostics.Debugger.IsAttached)
     Console.CursorVisible = false;
 }
 
-Console.WriteLine("Rvl.Host.App | exit=[CTRL+C] | bootloader=[F] | ledON=[O] | ledOFF=[P] | brightness=[B/M/N] | clear=[C] | restart=[R] | message=[CTRL+1..5]");
+Console.WriteLine("Rvl.Host.App | exit=[CTRL+C] | message=[CTRL+1..5] | brightness=[B/M/N] | clear=[C] | restart=[Alt+R] | bootloader=[Alt+F]");
 
 if (device.IsConnected)
 {
