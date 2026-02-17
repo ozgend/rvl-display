@@ -32,8 +32,11 @@ public struct Constants
         public const byte Ok = 0xaa;
         public const byte Error = 0xee;
 
-        public const byte DataPayload = 0xdd;
-        public const byte CommandPayload = 0xcc;
+        public struct Type
+        {
+            public const byte Data = 0xdd;
+            public const byte Command = 0xcc;
+        }
 
         public struct Index
         {
@@ -68,5 +71,4 @@ public struct Constants
             public const byte EnterBootloader = 0x77;
         }
     }
-
 }

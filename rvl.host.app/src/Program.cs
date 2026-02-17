@@ -1,5 +1,22 @@
 ﻿using Rvl.Host.App;
 
+var commandMap = new Dictionary<(ConsoleKey, ConsoleModifiers), (RvlCommandData, string)>
+{
+    { (ConsoleKey.D1, ConsoleModifiers.Control), (new RvlCommandData(Constants.Report.Command.MessageClear), "MessageClear") },
+    { (ConsoleKey.D2, ConsoleModifiers.Control), (new RvlCommandData(Constants.Report.Command.MessageAwait), "MessageAwait") },
+    { (ConsoleKey.D3, ConsoleModifiers.Control), (new RvlCommandData(Constants.Report.Command.MessageCheckHost), "MessageCheckHost") },
+    { (ConsoleKey.D4, ConsoleModifiers.Control), (new RvlCommandData(Constants.Report.Command.MessageHighTemp), "MessageHighTemp") },
+    { (ConsoleKey.D5, ConsoleModifiers.Control), (new RvlCommandData(Constants.Report.Command.MessageLowRpm), "MessageLowRpm") },
+    { (ConsoleKey.F, ConsoleModifiers.Alt), (new RvlCommandData(Constants.Report.Command.EnterBootloader), "EnterBootloader") },
+    { (ConsoleKey.R, ConsoleModifiers.Alt), (new RvlCommandData(Constants.Report.Command.RestartDevice), "RestartDevice") },
+    { (ConsoleKey.C, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.ClearDisplay), "ClearDisplay") },
+    { (ConsoleKey.B, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.SetBrightnessHigh), "SetBrightnessHigh") },
+    { (ConsoleKey.N, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.SetBrightnessMedium), "SetBrightnessMedium") },
+    { (ConsoleKey.M, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.SetBrightnessLow), "SetBrightnessLow") },
+    { (ConsoleKey.O, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.LedOn), "LedOn") },
+    { (ConsoleKey.P, ConsoleModifiers.None), (new RvlCommandData(Constants.Report.Command.LedOff), "LedOff") },
+};
+
 var device = new RvlDevice();
 var deviceEventHandler = new Action<string>(async eventName =>
 {
@@ -8,7 +25,7 @@ var deviceEventHandler = new Action<string>(async eventName =>
     {
         case Constants.Events.DeviceConnected:
             Console.WriteLine("RvlDevice connected.");
-            await device.SendCommand(Constants.Report.Command.MessageClear);
+            await device.Send(new RvlCommandData(Constants.Report.Command.MessageClear));
             break;
         default:
             break;
@@ -25,7 +42,7 @@ if (!canMonitor)
     Console.WriteLine("Error: Failed to initialize monitor.");
     if (device.IsConnected)
     {
-        await device.SendCommand(Constants.Report.Command.MessageCheckHost);
+        await device.Send(new RvlCommandData(Constants.Report.Command.MessageCheckHost));
         device.Dispose();
     }
     Environment.Exit(1);
@@ -33,8 +50,12 @@ if (!canMonitor)
 
 using var cancellation = new CancellationTokenSource();
 
-Console.CancelKeyPress += (sender, e) =>
+Console.CancelKeyPress += async (sender, e) =>
 {
+    if (device.IsConnected)
+    {
+        await device.Send(new RvlCommandData(Constants.Report.Command.MessageCheckHost));
+    }
     Console.WriteLine("Ctrl+C received. Exiting...");
     e.Cancel = true;
     cancellation.Cancel();
@@ -46,79 +67,32 @@ if (!System.Diagnostics.Debugger.IsAttached)
     Console.CursorVisible = false;
 }
 
-Console.WriteLine("Rvl.Host.App | exit=[CTRL+C] | bootloader=[F] | ledON=[O] | ledOFF=[P] | brightness=[B/M/N] | clear=[C] | restart=[R] | message=[CTRL+1..4]");
+Console.WriteLine("Rvl.Host.App | exit=[CTRL+C] | bootloader=[F] | ledON=[O] | ledOFF=[P] | brightness=[B/M/N] | clear=[C] | restart=[R] | message=[CTRL+1..5]");
 
 if (device.IsConnected)
 {
-    await device.SendCommand(Constants.Report.Command.LedOff);
-    await device.SendCommand(Constants.Report.Command.MessageClear);
+    await device.Send(new RvlCommandData(Constants.Report.Command.LedOff));
+    await device.Send(new RvlCommandData(Constants.Report.Command.MessageClear));
 }
 
 try
 {
     while (!cancellation.Token.IsCancellationRequested)
     {
+        // cli input handling
         if (!System.Diagnostics.Debugger.IsAttached)
         {
             if (device.IsConnected && Console.KeyAvailable)
             {
-                switch (Console.ReadKey(true).Key)
+                var mappedCommand = commandMap.FirstOrDefault(kvp => kvp.Key.Item1 == Console.ReadKey(true).Key
+                    && (kvp.Key.Item2 == ConsoleModifiers.None
+                    || (ConsoleModifiers.Control & ConsoleModifiers.Control) != 0)
+                ).Value;
+
+                if (mappedCommand.Item1 != null)
                 {
-                    // ctrl+1..5 for test messages
-                    case ConsoleKey.D1 when (ConsoleModifiers.Control & ConsoleModifiers.Control) != 0:
-                        await device.SendCommand(Constants.Report.Command.MessageClear);
-                        Console.WriteLine("Sent MessageClear command to device.");
-                        break;
-                    case ConsoleKey.D2 when (ConsoleModifiers.Control & ConsoleModifiers.Control) != 0:
-                        await device.SendCommand(Constants.Report.Command.MessageAwait);
-                        Console.WriteLine("Sent MessageAwait command to device.");
-                        break;
-                    case ConsoleKey.D3 when (ConsoleModifiers.Control & ConsoleModifiers.Control) != 0:
-                        await device.SendCommand(Constants.Report.Command.MessageCheckHost);
-                        Console.WriteLine("Sent MessageCheckHost command to device.");
-                        break;
-                    case ConsoleKey.D4 when (ConsoleModifiers.Control & ConsoleModifiers.Control) != 0:
-                        await device.SendCommand(Constants.Report.Command.MessageHighTemp);
-                        Console.WriteLine("Sent MessageHighTemp command to device.");
-                        break;
-                    case ConsoleKey.D5 when (ConsoleModifiers.Control & ConsoleModifiers.Control) != 0:
-                        await device.SendCommand(Constants.Report.Command.MessageLowRpm);
-                        Console.WriteLine("Sent MessageLowRpm command to device.");
-                        break;
-                    case ConsoleKey.C:
-                        await device.SendCommand(Constants.Report.Command.ClearDisplay);
-                        Console.WriteLine("Sent ClearDisplay command to device.");
-                        break;
-                    case ConsoleKey.R:
-                        await device.SendCommand(Constants.Report.Command.RestartDevice);
-                        Console.WriteLine("Sent RestartDevice command to device.");
-                        break;
-                    case ConsoleKey.B:
-                        await device.SendCommand(Constants.Report.Command.SetBrightnessHigh);
-                        Console.WriteLine("Sent SetBrightnessHigh command to device.");
-                        break;
-                    case ConsoleKey.N:
-                        await device.SendCommand(Constants.Report.Command.SetBrightnessMedium);
-                        Console.WriteLine("Sent SetBrightnessMedium command to device.");
-                        break;
-                    case ConsoleKey.M:
-                        await device.SendCommand(Constants.Report.Command.SetBrightnessLow);
-                        Console.WriteLine("Sent SetBrightnessLow command to device.");
-                        break;
-                    case ConsoleKey.O:
-                        await device.SendCommand(Constants.Report.Command.LedOn);
-                        Console.WriteLine("Sent LedOn command to device.");
-                        break;
-                    case ConsoleKey.P:
-                        await device.SendCommand(Constants.Report.Command.LedOff);
-                        Console.WriteLine("Sent LedOff command to device.");
-                        break;
-                    case ConsoleKey.F:
-                        await device.SendCommand(Constants.Report.Command.EnterBootloader);
-                        device.ForceDisconnect();
-                        Console.WriteLine("Sent EnterBootloader command to device.");
-                        // cancellation.Cancel();
-                        break;
+                    await device.Send(mappedCommand.Item1);
+                    Console.WriteLine($"RvlCommand sent {mappedCommand.Item2}:{mappedCommand.Item1.Command:X2}");
                 }
             }
         }
@@ -131,7 +105,7 @@ try
 
         if (device.IsConnected)
         {
-            await device.SendData(data);
+            await device.Send(data);
         }
 
         await Task.Delay(Constants.SensorPollIntervalMs, cancellation.Token);
@@ -149,7 +123,7 @@ finally
 {
     if (device.IsConnected)
     {
-        await device.SendCommand(Constants.Report.Command.MessageCheckHost);
+        await device.Send(new RvlCommandData(Constants.Report.Command.MessageCheckHost));
         device.Dispose();
     }
 

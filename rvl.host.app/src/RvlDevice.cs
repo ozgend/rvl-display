@@ -6,8 +6,7 @@ public interface IRvlDevice
 {
     bool IsConnected { get; }
     bool Initialize(Action<string> handler);
-    Task SendData(RvlMonitorData data);
-    Task SendCommand(byte command, byte value = Constants.Report.Null);
+    Task Send<T>(IRvlDevicePayload<T> payload);
     string GetDeviceInfo();
     void ForceDisconnect();
 }
@@ -33,40 +32,53 @@ public class RvlDevice : IRvlDevice, IDisposable
         return true;
     }
 
-    public async Task SendData(RvlMonitorData data)
+    public async Task Send<T>(IRvlDevicePayload<T> payload)
     {
-        if (!_isDeviceConnected || _stream == null)
+        try
         {
-            Console.WriteLine("Error: Cannot send data, no device connection.");
-            return;
+            if (!_isDeviceConnected || _stream == null)
+            {
+                Console.WriteLine("Error: Cannot communicate with device, will not send payload");
+                return;
+            }
+            RvlMonitorData? monitorData = null;
+            RvlCommandData? commandData = null;
+
+            byte[] report = new byte[Constants.Report.Length];
+            report[Constants.Report.Index.ReportId] = Constants.Report.Null;
+            report[Constants.Report.Index.Type] = payload.Type;
+
+            switch (payload.Type)
+            {
+                case Constants.Report.Type.Data:
+                    monitorData = payload as RvlMonitorData ?? throw new InvalidCastException("Invalid payload type for MonitorData");
+                    report[Constants.Report.Index.CpuTemp] = (byte)monitorData.CpuTemperature;
+                    report[Constants.Report.Index.CpuUtilization] = (byte)monitorData.CpuUtilization;
+                    report[Constants.Report.Index.GpuTemp] = (byte)monitorData.GpuTemperature;
+                    report[Constants.Report.Index.GpuUtilization] = (byte)monitorData.GpuUtilization;
+                    break;
+                case Constants.Report.Type.Command:
+                    commandData = payload as RvlCommandData ?? throw new InvalidCastException("Invalid payload type for CommandData");
+                    report[Constants.Report.Index.CommandName] = commandData.Command;
+                    break;
+                default:
+                    Console.WriteLine("Error: Unknown payload type, cannot send.");
+                    return;
+            }
+
+            await _stream.WriteAsync(report);
+
+
+            if (commandData?.Command == Constants.Report.Command.EnterBootloader)
+            {
+                ForceDisconnect();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending data to device: {ex.Message}");
         }
 
-        byte[] report = new byte[Constants.Report.Length];
-        report[Constants.Report.Index.ReportId] = Constants.Report.Null;
-        report[Constants.Report.Index.Type] = Constants.Report.DataPayload;
-        report[Constants.Report.Index.CpuTemp] = (byte)data.CpuTemperature;
-        report[Constants.Report.Index.CpuUtilization] = (byte)data.CpuUtilization;
-        report[Constants.Report.Index.GpuTemp] = (byte)data.GpuTemperature;
-        report[Constants.Report.Index.GpuUtilization] = (byte)data.GpuUtilization;
-
-        await _stream.WriteAsync(report);
-    }
-
-    public async Task SendCommand(byte command, byte value = Constants.Report.Null)
-    {
-        if (!_isDeviceConnected || _stream == null)
-        {
-            Console.WriteLine("Error: Cannot send command, no device connection.");
-            return;
-        }
-
-        byte[] report = new byte[Constants.Report.Length];
-        report[Constants.Report.Index.ReportId] = Constants.Report.Null;
-        report[Constants.Report.Index.Type] = Constants.Report.CommandPayload;
-        report[Constants.Report.Index.CommandName] = command;
-        report[Constants.Report.Index.CommandValue] = value;
-
-        await _stream.WriteAsync(report);
     }
 
     public string GetDeviceInfo()
