@@ -4,61 +4,45 @@ namespace Rvl.Host.App;
 
 public interface IRvlDevice
 {
-    bool Initialize();
+    bool IsConnected { get; }
+    bool Initialize(Action<string> handler);
     Task SendData(RvlMonitorData data);
     Task SendCommand(byte command, byte value = Constants.Report.Null);
     string GetDeviceInfo();
+    void ForceDisconnect();
 }
 
 public class RvlDevice : IRvlDevice, IDisposable
 {
     private HidDevice? _device;
     private HidStream? _stream;
+    private Action<string>? _eventHandler;
+    private bool _isDeviceConnected = false;
+    private int _deviceNotFoundEventCount;
 
-
-    public bool Initialize()
+    public bool IsConnected
     {
-        Console.WriteLine("init: RvlDevice");
+        get => _isDeviceConnected;
+    }
 
-        _device = DeviceList.Local.GetHidDeviceOrNull(Constants.DeviceInfo.VendorId, Constants.DeviceInfo.ProductId);
-
-        if (_device == null)
-        {
-            Console.WriteLine("Error: RvlDevice not found.");
-            return false;
-        }
-
-        Console.WriteLine($"RvlDevice: {_device.GetManufacturer()}:{_device.GetProductName()} SN: {_device.GetSerialNumber()} ({_device.VendorID:X4}:{_device.ProductID:X4})");
-
-        _stream = _device.Open();
-
-        if (_stream == null)
-        {
-            Console.WriteLine("Error: Failed to open RvlDevice stream.");
-            return false;
-        }
-
-        Console.WriteLine("init: RvlDevice done.");
-
+    public bool Initialize(Action<string>? handler)
+    {
+        _eventHandler = handler;
+        DeviceList.Local.Changed += (sender, e) => ConnectToDevice();
+        ConnectToDevice();
         return true;
     }
 
     public async Task SendData(RvlMonitorData data)
     {
-        if (_device == null || _stream == null)
+        if (!_isDeviceConnected || _stream == null)
         {
-            Console.WriteLine("Error: RvlDevice not initialized.");
-            return;
-        }
-
-        if (_stream.CanWrite == false)
-        {
-            Console.WriteLine("Error: RvlDevice stream is not writable.");
+            Console.WriteLine("Error: Cannot send data, no device connection.");
             return;
         }
 
         byte[] report = new byte[Constants.Report.Length];
-        report[Constants.Report.Index.ReportId] = Constants.Report.Null; // Report ID (0 for default)
+        report[Constants.Report.Index.ReportId] = Constants.Report.Null;
         report[Constants.Report.Index.Type] = Constants.Report.DataPayload;
         report[Constants.Report.Index.CpuTemp] = (byte)data.CpuTemperature;
         report[Constants.Report.Index.CpuUtilization] = (byte)data.CpuUtilization;
@@ -66,47 +50,65 @@ public class RvlDevice : IRvlDevice, IDisposable
         report[Constants.Report.Index.GpuUtilization] = (byte)data.GpuUtilization;
 
         await _stream.WriteAsync(report);
-        // await _stream.FlushAsync();
     }
 
     public async Task SendCommand(byte command, byte value = Constants.Report.Null)
     {
-        if (_device == null || _stream == null)
+        if (!_isDeviceConnected || _stream == null)
         {
-            Console.WriteLine("Error: RvlDevice not initialized.");
-            return;
-        }
-
-        if (_stream.CanWrite == false)
-        {
-            Console.WriteLine("Error: RvlDevice stream is not writable.");
+            Console.WriteLine("Error: Cannot send command, no device connection.");
             return;
         }
 
         byte[] report = new byte[Constants.Report.Length];
-        report[Constants.Report.Index.ReportId] = Constants.Report.Null; // Report ID (0 for default)
+        report[Constants.Report.Index.ReportId] = Constants.Report.Null;
         report[Constants.Report.Index.Type] = Constants.Report.CommandPayload;
         report[Constants.Report.Index.CommandName] = command;
         report[Constants.Report.Index.CommandValue] = value;
 
         await _stream.WriteAsync(report);
-        await _stream.FlushAsync();
+    }
+
+    public string GetDeviceInfo()
+    {
+        return _isDeviceConnected && _device != null ? $"RvlDevice: {_device.GetManufacturer()}:{_device.GetProductName()} SN: {_device.GetSerialNumber()} ({_device.VendorID:X4}:{_device.ProductID:X4})" : "RvlDevice not connected.";
     }
 
     public void Dispose()
     {
         _stream?.Dispose();
+        _stream = null;
         _device = null;
         GC.SuppressFinalize(this);
     }
 
-    public string GetDeviceInfo()
+    public void ForceDisconnect()
     {
-        if (_device == null)
-        {
-            return "RvlDevice not found.";
-        }
+        _isDeviceConnected = false;
+        _eventHandler?.Invoke(Constants.Events.DeviceDisconnected);
+        Console.WriteLine("RvlDevice disconnected.");
+    }
 
-        return $"RvlDevice: {_device.GetManufacturer()}:{_device.GetProductName()} SN: {_device.GetSerialNumber()} ({_device.VendorID:X4}:{_device.ProductID:X4}) @ Stream: {(_stream != null && _stream.CanWrite ? "Open" : "Closed")} ";
+    private void ConnectToDevice()
+    {
+        _device = DeviceList.Local.GetHidDeviceOrNull(Constants.DeviceInfo.VendorId, Constants.DeviceInfo.ProductId);
+        _isDeviceConnected = _device != null && _device.TryOpen(out _stream) && _stream != null;
+
+        if (_isDeviceConnected)
+        {
+            _deviceNotFoundEventCount = 0;
+            _eventHandler?.Invoke(Constants.Events.DeviceConnected);
+            Console.WriteLine($"RvlDevice: {GetDeviceInfo()}");
+            Console.WriteLine("RvlDevice connected.");
+        }
+        else
+        {
+            _deviceNotFoundEventCount++;
+            if (_deviceNotFoundEventCount == 1)
+            {
+                _eventHandler?.Invoke(Constants.Events.DeviceNotFound);
+                Console.WriteLine("RvlDevice not found.");
+            }
+        }
     }
 }

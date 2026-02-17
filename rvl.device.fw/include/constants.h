@@ -54,6 +54,7 @@ namespace Constants
 
     namespace Command
     {
+      static constexpr uint8_t MessageClear = 0x10;
       static constexpr uint8_t MessageAwait = 0x1A;
       static constexpr uint8_t MessageCheckHost = 0x1C;
       static constexpr uint8_t MessageHighTemp = 0x17;

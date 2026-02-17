@@ -2,6 +2,20 @@ namespace Rvl.Host.App;
 
 public struct Constants
 {
+    public const int MaxReconnectAttempts = 10;
+    public const int ReconnectDelayMs = 5000;
+    public const int SensorPollIntervalMs = 2000;
+
+    public struct Events
+    {
+        public const string DeviceConnected = "DeviceConnected";
+        public const string DeviceInterrupted = "DeviceInterrupted";
+        public const string DeviceDisconnected = "DeviceDisconnected";
+        public const string DeviceError = "DeviceError";
+        public const string DeviceNotFound = "DeviceNotFound";
+        public const string Unknown = "Unknown";
+    }
+
     public struct DeviceInfo
     {
         public const int VendorId = 0x5EED;
@@ -35,6 +49,7 @@ public struct Constants
 
         public struct Command
         {
+            public const byte MessageClear = 0x10;
             public const byte MessageAwait = 0x1a;
             public const byte MessageCheckHost = 0x1c;
             public const byte MessageHighTemp = 0x17;

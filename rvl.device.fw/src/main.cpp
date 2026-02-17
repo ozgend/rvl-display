@@ -52,6 +52,10 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
     uint8_t commandName = buffer[Constants::Report::Index::CommandName];
     uint8_t commandValue = buffer[Constants::Report::Index::CommandValue];
 
+    if (commandName == Constants::Report::Command::MessageClear)
+    {
+      clearMessage(tft);
+    }
     if (commandName == Constants::Report::Command::MessageAwait)
     {
       drawMessage(tft, TFT_SKYBLUE, "awaiting...");

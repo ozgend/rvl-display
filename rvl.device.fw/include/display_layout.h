@@ -9,29 +9,35 @@ void drawValues(TFT_eSPI &tft, SensorData data)
 
   // cpuTempValue
   sprintf(buffer, "%2d", data.cpuTemp);
-  tft.setTextColor(0x86DF, TFT_BLACK);
+  tft.setTextColor(0x86DF);
   tft.setFreeFont(&FreeSans18pt7b);
+  tft.fillRect(54, 0, 44, 32, 0x0);
   tft.drawString(buffer, 56, 0);
 
   // cpuUtilVar
   buffer[0] = '\0';
   sprintf(buffer, "%3d %%", data.cpuUtilization);
-  tft.setTextColor(TFT_SILVER, TFT_BLACK);
+  tft.setTextColor(TFT_SILVER);
   tft.setFreeFont(&FreeSans9pt7b);
+  tft.fillRect(54, 32, 52, 20, 0x0);
+
   tft.drawString(buffer, 56, 34);
 
   // gpuTempValue
   buffer[0] = '\0';
   sprintf(buffer, "%2d", data.gpuTemp);
-  tft.setTextColor(0xF206, TFT_BLACK);
+  tft.setTextColor(0xF206);
   tft.setFreeFont(&FreeSans18pt7b);
+  tft.fillRect(54, 70, 44, 32, 0x0);
   tft.drawString(buffer, 56, 70);
 
   // gpuUtilVar
   buffer[0] = '\0';
   sprintf(buffer, "%3d %%", data.gpuUtilization);
-  tft.setTextColor(TFT_SILVER, TFT_BLACK);
+  tft.setTextColor(TFT_SILVER);
   tft.setFreeFont(&FreeSans9pt7b);
+  tft.fillRect(54, 102, 52, 20, 0x0);
+
   tft.drawString(buffer, 56, 104);
 }
 
@@ -44,7 +50,7 @@ void drawMessage(TFT_eSPI &tft, uint16_t color, const char *message)
 {
   clearMessage(tft);
   tft.setTextColor(color, TFT_BLACK);
-  tft.setFreeFont(&FreeSans9pt7b);
+  tft.setFreeFont(&FreeMono9pt7b);
   tft.drawString(message, 0, 142);
 }
 
