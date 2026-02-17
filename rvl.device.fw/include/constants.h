@@ -1,0 +1,77 @@
+#ifndef RVL_CONSTANTS_H
+#define RVL_CONSTANTS_H
+
+#include <cstdint>
+
+struct SensorData
+{
+  uint8_t cpuTemp;
+  uint8_t cpuUtilization;
+  uint8_t gpuTemp;
+  uint8_t gpuUtilization;
+};
+
+bool isSensorDataDifferent(const SensorData &a, const SensorData &b)
+{
+  return a.cpuTemp != b.cpuTemp ||
+         a.cpuUtilization != b.cpuUtilization ||
+         a.gpuTemp != b.gpuTemp ||
+         a.gpuUtilization != b.gpuUtilization;
+}
+
+namespace Constants
+{
+
+  namespace DeviceInfo
+  {
+    static constexpr uint16_t VendorId = 0x5EED;
+    static constexpr uint16_t ProductId = 0xFACE;
+    static constexpr char VendorName[] = "denolk";
+    static constexpr char ProductName[] = "rvl-display";
+    static constexpr char SerialNumber[] = "R0666";
+  }
+
+  namespace Report
+  {
+    static constexpr uint8_t Length = 64;
+    static constexpr uint8_t Null = 0x00;
+    static constexpr uint8_t Ok = 0xAA;
+    static constexpr uint8_t Error = 0xEE;
+
+    static constexpr uint8_t DataPayload = 0xDD;
+    static constexpr uint8_t CommandPayload = 0xCC;
+
+    namespace Index
+    {
+      static constexpr int Type = 0;
+      static constexpr int CommandName = 1;
+      static constexpr int CommandValue = 2;
+      static constexpr int CpuTemp = 1;
+      static constexpr int CpuUtilization = 2;
+      static constexpr int GpuTemp = 3;
+      static constexpr int GpuUtilization = 4;
+    }
+
+    namespace Command
+    {
+      static constexpr uint8_t MessageAwait = 0x1A;
+      static constexpr uint8_t MessageCheckHost = 0x1C;
+      static constexpr uint8_t MessageHighTemp = 0x17;
+      static constexpr uint8_t MessageLowRpm = 0x19;
+
+      static constexpr uint8_t ClearDisplay = 0xD0;
+      static constexpr uint8_t SetBrightnessOff = 0xB0;
+      static constexpr uint8_t SetBrightnessLow = 0xB1;
+      static constexpr uint8_t SetBrightnessMedium = 0xB2;
+      static constexpr uint8_t SetBrightnessHigh = 0xB3;
+
+      static constexpr uint8_t LedOff = 0xC0;
+      static constexpr uint8_t LedOn = 0xC1;
+
+      static constexpr uint8_t RestartDevice = 0xFF;
+      static constexpr uint8_t EnterBootloader = 0x77;
+    }
+  }
+}
+
+#endif
