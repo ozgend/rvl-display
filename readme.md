@@ -14,7 +14,8 @@ a custom hardware to monitor system sensors via 1.8" TFT LCD, powered by a Raspb
 - [rvl.device.fw/](rvl.device.fw/): PlatformIO project for the Raspberry Pi Pico firmware.
   - Uses [rvl.device.fw/src/main.cpp](rvl.device.fw/src/main.cpp) for HID communication and display rendering.
   - Configuration is defined in [rvl.device.fw/platformio.ini](rvl.device.fw/platformio.ini).
-- [rvl.host.app/](rvl.host.app/): c# dotnet project for the HID host application
+- [rvl.host.app/](rvl.host.app/): c# dotnet project for the HID host application windows service.
+  - Requires administrator privileges to access hardware sensors.
   - Utilizes `LibreHardwareMonitor` to fetch system metrics.
   - Streams data via HID to the device.
 
@@ -46,7 +47,8 @@ a custom hardware to monitor system sensors via 1.8" TFT LCD, powered by a Raspb
 
 ### TODO
 
-- [ ] Add fan sensors
-- [ ] Windows native service
-- [ ] 3D print a custom case
+- [ ] add cpu fan sensors
+- [ ] add gpu fan sensors
+- [ ] tray app service ipc client 
 - [ ] display temp colors based on thresholds
+- [ ] 3D print a custom case
