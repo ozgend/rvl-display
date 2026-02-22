@@ -5,7 +5,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>Rvl.Display.Host</AssemblyName>
+    <AssemblyName>Rvl.Display.Service</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <NoWarn>CA1416,CA1873</NoWarn>
   </PropertyGroup>

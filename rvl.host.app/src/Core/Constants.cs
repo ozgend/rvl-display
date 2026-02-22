@@ -2,7 +2,8 @@ namespace Rvl.Host.App.Core;
 
 public struct Constants
 {
-    public const string AppName = "Rvl.Display.Host";
+    public const string ServiceName = "Rvl.Display.Service";
+    public const string CliName = "Rvl.Display.Cli";
     public const string PipeName = "rvl-display";
     public const int SensorPollIntervalMs = 1000;
 

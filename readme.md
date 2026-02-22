@@ -19,9 +19,8 @@ a custom hardware to monitor system sensors via 1.8" TFT LCD, powered by a Raspb
   - Utilizes `LibreHardwareMonitor` to fetch system metrics.
   - Streams data via HID to the device.
 
-## Getting Started
 
-### Firmware
+### rvl.display firmware
 
 1. Open the [rvl.device.fw/](rvl.device.fw/) folder via VS Code + PlatformIO.
 2. Build and upload the project to your Raspberry Pi Pico.
@@ -29,11 +28,12 @@ a custom hardware to monitor system sensors via 1.8" TFT LCD, powered by a Raspb
 
    ![tft layout](./docs/tft_layout.png)
 
-### Host Application
+### rvl.display.host windows service
 
 1. Open the [rvl.host.app/](rvl.host.app/) project
 2. Build and run the application (requires Administrator privileges for `LibreHardwareMonitor` to access sensors).
-3. Simple cli interface commands & streaming data to the device:
+3. Install the service via `sc create "Rvl.Display.Host" binPath= "path\to\rvl.host.app.exe" start= auto`
+4. Simple cli interface commands & streaming data to the device:
 
    ```ini
    Rvl.Host.App

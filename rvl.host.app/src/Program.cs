@@ -12,10 +12,10 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.Configuration.SetBasePath(AppContext.BaseDirectory);
 builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-builder.Services.AddOptions<RvlDisplayConfigOptions>().Bind(builder.Configuration.GetRequiredSection(Constants.AppName)).ValidateDataAnnotations().ValidateOnStart();
+builder.Services.AddOptions<RvlDisplayConfigOptions>().Bind(builder.Configuration.GetRequiredSection(Constants.ServiceName)).ValidateDataAnnotations().ValidateOnStart();
 builder.Services.AddWindowsService(options =>
 {
-    options.ServiceName = $"{Constants.AppName}.Service";
+    options.ServiceName = $"{Constants.ServiceName}.Service";
 });
 
 builder.Logging.ClearProviders();
