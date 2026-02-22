@@ -140,6 +140,7 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
             _eventHandler?.Invoke(Constants.Events.DeviceConnected);
             _logger?.LogInformation($"RvlDevice: {GetDeviceInfo()}");
             _logger?.LogInformation("RvlDevice connected.");
+
         }
         else
         {

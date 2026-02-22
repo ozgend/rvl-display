@@ -2,6 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Rvl.Host.App.Core.Hardware;
 using Rvl.Host.App.Core.Interfaces;
+using Rvl.Host.App.Core.Model;
 
 namespace Rvl.Host.App.Core.Host;
 
@@ -22,7 +23,22 @@ public sealed class RvlDisplayWorker(
     {
         _logger?.LogInformation("RvlDisplay service starting...");
 
-        _device.Initialize(eventName => _logger?.LogInformation("Device event: {Event}", eventName));
+        _device.Initialize(async eventName =>
+        {
+            switch (eventName)
+            {
+                case Constants.Events.DeviceConnected:
+                    _logger?.LogInformation("Device connected: {DeviceInfo}", _device.GetDeviceInfo());
+                    await _sink.EnqueueAsync(new RvlCommandData(Constants.Report.Command.MessageClear), stoppingToken);
+                    break;
+                case Constants.Events.DeviceDisconnected:
+                    _logger?.LogInformation("Device disconnected.");
+                    break;
+                default:
+                    _logger?.LogWarning("Unknown device event: {EventName}", eventName);
+                    break;
+            }
+        });
 
         var canMonitor = _monitor.Initialize();
         if (!canMonitor)
