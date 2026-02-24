@@ -2,15 +2,16 @@ using System.IO.Pipes;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using Microsoft.Extensions.Logging;
-using Rvl.Host.App.Core.Interfaces;
+using Rvl.Display.Core;
+using Rvl.Display.Core.Interfaces;
 
-namespace Rvl.Host.App.Core.Host;
+namespace Rvl.Display.Service.Host;
 
-public sealed class PipeForwardingServer(ILogger<PipeForwardingServer> logger, IHidReportSink sink) : IPipeForwardingServer
+public sealed class RvlPipeServer(ILogger<RvlPipeServer> logger, IRvlHidReportSink sink) : IRvlPipeServer
 {
     public string PipeName => Constants.PipeName;
-    private readonly ILogger<PipeForwardingServer> _logger = logger;
-    private readonly IHidReportSink _sink = sink;
+    private readonly ILogger<RvlPipeServer> _logger = logger;
+    private readonly IRvlHidReportSink _sink = sink;
 
     public async Task RunAsync(CancellationToken ct)
     {
@@ -43,14 +44,14 @@ public sealed class PipeForwardingServer(ILogger<PipeForwardingServer> logger, I
     private NamedPipeServerStream CreateServerStream()
     {
         var pipeSecurity = new PipeSecurity();
-
-        var authenticatedUsersSid = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null);
-        pipeSecurity.AddAccessRule(new PipeAccessRule(authenticatedUsersSid, PipeAccessRights.ReadWrite, AccessControlType.Allow));
-
         var localSystemSid = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
+        var authenticatedUsersSid = new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null);
+
+        pipeSecurity.AddAccessRule(new PipeAccessRule(authenticatedUsersSid, PipeAccessRights.ReadWrite, AccessControlType.Allow));
         pipeSecurity.AddAccessRule(new PipeAccessRule(localSystemSid, PipeAccessRights.FullControl, AccessControlType.Allow));
 
-        return NamedPipeServerStreamAcl.Create(PipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, inBufferSize: 4096, outBufferSize: 4096, pipeSecurity);
+        var pipeServer = NamedPipeServerStreamAcl.Create(PipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous, inBufferSize: 4096, outBufferSize: 4096, pipeSecurity);
+        return pipeServer;
     }
 
     // ipc client handler
@@ -80,13 +81,13 @@ public sealed class PipeForwardingServer(ILogger<PipeForwardingServer> logger, I
                     Buffer.BlockCopy(buffer, 0, report, 0, buffer.Length);
 
                     await _sink.EnqueueAsync(report, ct);
-                    await pipe.WriteAsync(new byte[] { 0x00 }, ct);
+                    await pipe.WriteAsync(new byte[] { Constants.Report.Ok }, ct);
                     await pipe.FlushAsync(ct);
                 }
                 catch (Exception ex)
                 {
                     _logger?.LogWarning(ex, "Failed to enqueue forwarded report.");
-                    await pipe.WriteAsync(new byte[] { 0x02 }, ct);
+                    await pipe.WriteAsync(new byte[] { Constants.Report.Error }, ct);
                     await pipe.FlushAsync(ct);
                 }
             }

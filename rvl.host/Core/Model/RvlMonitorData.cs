@@ -1,29 +1,29 @@
-using Rvl.Host.App.Core.Interfaces;
+using Rvl.Display.Core.Interfaces;
 
-namespace Rvl.Host.App.Core.Model;
+namespace Rvl.Display.Core.Model;
 
-public class RvlMonitorData : IRvlDevicePayload<RvlMonitorData>
+public sealed class RvlMonitorData : IRvlDevicePayload<RvlMonitorData>
 {
     public byte Type => Constants.Report.Type.Data;
-    public string CpuName { get; internal set; }
-    public int CpuTemperature { get; internal set; }
-    public int CpuUtilization { get; internal set; }
-    public int CpuFan { get; internal set; }
-    public string GpuName { get; internal set; }
-    public int GpuTemperature { get; internal set; }
-    public int GpuUtilization { get; internal set; }
-    public int GpuFan { get; internal set; }
+    public string CpuName { get; set; }
+    public int CpuTemperature { get; set; }
+    public int CpuUtilization { get; set; }
+    public int CpuFan { get; set; }
+    public string GpuName { get; set; }
+    public int GpuTemperature { get; set; }
+    public int GpuUtilization { get; set; }
+    public int GpuFan { get; set; }
 
     public RvlMonitorData()
     {
         CpuName = "Unknown";
-        CpuTemperature = -1;
-        CpuUtilization = -1;
-        CpuFan = -1;
+        CpuTemperature = 0;
+        CpuUtilization = 0;
+        CpuFan = 0;
         GpuName = "Unknown";
-        GpuTemperature = -1;
-        GpuUtilization = -1;
-        GpuFan = -1;
+        GpuTemperature = 0;
+        GpuUtilization = 0;
+        GpuFan = 0;
     }
 
     public byte[] ToReport()
@@ -39,5 +39,7 @@ public class RvlMonitorData : IRvlDevicePayload<RvlMonitorData>
         report[Constants.Report.Index.GpuFan] = (byte)GpuFan;
         return report;
     }
+
+    public static RvlMonitorData Zero() => new();
 }
 

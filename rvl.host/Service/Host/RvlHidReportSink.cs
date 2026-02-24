@@ -1,18 +1,19 @@
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
-using Rvl.Host.App.Core.Hardware;
-using Rvl.Host.App.Core.Interfaces;
+using Rvl.Display.Core;
+using Rvl.Display.Core.Interfaces;
+using Rvl.Display.Service.Hardware;
 
-namespace Rvl.Host.App.Core.Host;
+namespace Rvl.Display.Service.Host;
 
-public sealed class HidReportSink : IHidReportSink
+public sealed class RvlHidReportSink : IRvlHidReportSink
 {
-    private readonly ILogger<HidReportSink> _logger;
+    private readonly ILogger<RvlHidReportSink> _logger;
     private readonly IRvlDevice _device;
 
     private readonly Channel<byte[]> _channel;
 
-    public HidReportSink(ILogger<HidReportSink> logger, IRvlDevice device)
+    public RvlHidReportSink(ILogger<RvlHidReportSink> logger, IRvlDevice device)
     {
         _logger = logger;
         _device = device;
@@ -32,7 +33,6 @@ public sealed class HidReportSink : IHidReportSink
             _logger?.LogError("Invalid report length: {Length}. Expected: {ExpectedLength}", report64.Length, Constants.Report.Length);
             return new ValueTask();
         }
-
         return _channel.Writer.WriteAsync(report64, ct);
     }
 
@@ -44,7 +44,7 @@ public sealed class HidReportSink : IHidReportSink
 
     public async Task RunAsync(CancellationToken ct)
     {
-        _logger?.LogInformation("HID sink loop started.");
+        _logger?.LogDebug("HID sink loop started.");
 
         while (!ct.IsCancellationRequested)
         {
@@ -71,6 +71,6 @@ public sealed class HidReportSink : IHidReportSink
             }
         }
 
-        _logger?.LogInformation("HID sink loop stopped.");
+        _logger?.LogDebug("HID sink loop stopped.");
     }
 }

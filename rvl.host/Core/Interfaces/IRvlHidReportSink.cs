@@ -1,9 +1,8 @@
-namespace Rvl.Host.App.Core.Interfaces;
+namespace Rvl.Display.Core.Interfaces;
 
-public interface IHidReportSink
+public interface IRvlHidReportSink : IRvlHost
 {
     ValueTask EnqueueAsync(byte[] report64, CancellationToken ct);
     ValueTask EnqueueAsync<T>(IRvlDevicePayload<T> payload, CancellationToken ct);
-    Task RunAsync(CancellationToken ct);
 }
 

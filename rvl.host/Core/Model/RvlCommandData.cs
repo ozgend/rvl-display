@@ -1,12 +1,12 @@
-using Rvl.Host.App.Core.Interfaces;
+using Rvl.Display.Core.Interfaces;
 
-namespace Rvl.Host.App.Core.Model;
+namespace Rvl.Display.Core.Model;
 
-public class RvlCommandData(byte command, byte? value = 0) : IRvlDevicePayload<RvlCommandData>
+public sealed class RvlCommandData(byte command, byte? value = 0) : IRvlDevicePayload<RvlCommandData>
 {
     public byte Type => Constants.Report.Type.Command;
-    public byte Command { get; internal set; } = command;
-    public byte Value { get; internal set; } = value ?? 0;
+    public byte Command { get; set; } = command;
+    public byte Value { get; set; } = value ?? 0;
 
     public byte[] ToReport()
     {
@@ -16,6 +16,11 @@ public class RvlCommandData(byte command, byte? value = 0) : IRvlDevicePayload<R
         report[Constants.Report.Index.CommandName] = Command;
         report[Constants.Report.Index.CommandValue] = Value;
         return report;
+    }
+
+    public static IRvlDevicePayload<RvlCommandData> New(byte command, byte? value = 0)
+    {
+        return new RvlCommandData(command, value);
     }
 }
 

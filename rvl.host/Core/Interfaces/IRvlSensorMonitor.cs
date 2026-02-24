@@ -1,6 +1,6 @@
-using Rvl.Host.App.Core.Model;
+using Rvl.Display.Core.Model;
 
-namespace Rvl.Host.App.Core.Interfaces;
+namespace Rvl.Display.Core.Interfaces;
 
 public interface IRvlSensorMonitor
 {

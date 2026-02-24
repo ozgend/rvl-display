@@ -6,6 +6,7 @@ coverage/
 bin/
 obj/
 test/
+publish/
 .DS_Store
 *.log
 .env*
