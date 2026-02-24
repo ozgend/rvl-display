@@ -15,13 +15,12 @@ enum LabelStatus
     Error
 }
 
-internal partial class CommandView : IRecipient<RvlDeviceCommand>
+internal partial class CommandView
 {
     private readonly NamedPipeClientStream _pipeClient;
 
     public CommandView()
     {
-        WeakReferenceMessenger.Default.Register(this);
         InitializeComponent();
         _pipeClient = new NamedPipeClientStream(".", Constants.PipeName, PipeDirection.InOut);
     }
@@ -122,4 +121,5 @@ internal partial class CommandView : IRecipient<RvlDeviceCommand>
         };
         _statusLabel.Text = $"Status: {text}";
     }
+
 }
