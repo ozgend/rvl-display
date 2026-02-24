@@ -1,11 +1,14 @@
-namespace Rvl.Host.App.Core;
+namespace Rvl.Display.Core;
 
 public struct Constants
 {
     public const string ServiceName = "Rvl.Display.Service";
     public const string CliName = "Rvl.Display.Cli";
     public const string PipeName = "rvl-display";
+    public readonly static string PipeAddress = $"\\\\.\\pipe\\{PipeName}";
     public const int SensorPollIntervalMs = 1000;
+    public const int DeviceReconnectIntervalMs = 1000;
+    public static int PipeConnectTimeoutMs = 1000;
 
     public struct Events
     {

@@ -1,4 +1,4 @@
-namespace Rvl.Host.App.Core.Interfaces;
+namespace Rvl.Display.Core.Interfaces;
 
 public interface IRvlDevicePayload<T>
 {

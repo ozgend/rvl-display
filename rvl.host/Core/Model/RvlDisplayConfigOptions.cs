@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Rvl.Host.App.Core.Model;
+namespace Rvl.Display.Core.Model;
 
 public sealed class RvlDisplayConfigOptions
 {

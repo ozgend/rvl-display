@@ -1,10 +1,10 @@
 using LibreHardwareMonitor.Hardware;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Rvl.Host.App.Core.Interfaces;
-using Rvl.Host.App.Core.Model;
+using Rvl.Display.Core.Interfaces;
+using Rvl.Display.Core.Model;
 
-namespace Rvl.Host.App.Core.Hardware;
+namespace Rvl.Display.Service.Hardware;
 
 public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
 {

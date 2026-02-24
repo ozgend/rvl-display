@@ -1,9 +1,10 @@
 using HidSharp;
 using Microsoft.Extensions.Logging;
-using Rvl.Host.App.Core.Interfaces;
-using Rvl.Host.App.Core.Model;
+using Rvl.Display.Core;
+using Rvl.Display.Core.Interfaces;
+using Rvl.Display.Core.Model;
 
-namespace Rvl.Host.App.Core.Hardware;
+namespace Rvl.Display.Service.Hardware;
 
 public interface IRvlDevice
 {
