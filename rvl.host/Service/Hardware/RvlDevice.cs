@@ -1,23 +1,29 @@
 using HidSharp;
+using Microsoft.Extensions.Logging;
+using Rvl.Display.Core;
+using Rvl.Display.Core.Interfaces;
+using Rvl.Display.Core.Model;
 
-namespace Rvl.Host.App;
+namespace Rvl.Display.Service.Hardware;
 
 public interface IRvlDevice
 {
     bool IsConnected { get; }
     bool Initialize(Action<string> handler);
-    Task Send<T>(IRvlDevicePayload<T> payload);
+    Task SendAsync<T>(IRvlDevicePayload<T> payload, CancellationToken ct);
+    Task SendRawAsync(byte[] report, CancellationToken ct);
     string GetDeviceInfo();
     void ForceDisconnect();
 }
 
-public class RvlDevice : IRvlDevice, IDisposable
+public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
 {
     private HidDevice? _device;
     private HidStream? _stream;
     private Action<string>? _eventHandler;
     private bool _isDeviceConnected = false;
     private int _deviceNotFoundEventCount;
+    private readonly ILogger<RvlDevice> _logger = logger;
 
     public bool IsConnected
     {
@@ -32,13 +38,13 @@ public class RvlDevice : IRvlDevice, IDisposable
         return true;
     }
 
-    public async Task Send<T>(IRvlDevicePayload<T> payload)
+    public async Task SendAsync<T>(IRvlDevicePayload<T> payload, CancellationToken ct)
     {
         try
         {
             if (!_isDeviceConnected || _stream == null)
             {
-                Console.WriteLine("Error: Cannot communicate with device, will not send payload");
+                _logger?.LogError("Error: Cannot communicate with device, will not send payload");
                 return;
             }
             RvlMonitorData? monitorData = null;
@@ -60,30 +66,53 @@ public class RvlDevice : IRvlDevice, IDisposable
                 case Constants.Report.Type.Command:
                     commandData = payload as RvlCommandData ?? throw new InvalidCastException("Invalid payload type for CommandData");
                     report[Constants.Report.Index.CommandName] = commandData.Command;
+                    report[Constants.Report.Index.CommandValue] = commandData.Value;
                     break;
                 default:
-                    Console.WriteLine("Error: Unknown payload type, cannot send.");
+                    _logger?.LogError("Error: Unknown payload type, cannot send.");
                     return;
             }
 
-            await _stream.WriteAsync(report);
+            await SendRawAsync(report, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error sending data to device.");
+        }
+    }
 
+    public async Task SendRawAsync(byte[] report, CancellationToken ct)
+    {
+        try
+        {
+            if (report.Length != Constants.Report.Length)
+            {
+                _logger?.LogError($"Error: Report must be {Constants.Report.Length} bytes, received: {report.Length} bytes.");
+            }
 
-            if (commandData?.Command == Constants.Report.Command.EnterBootloader)
+            if (!_isDeviceConnected || _stream == null)
+            {
+                return;
+            }
+
+            await _stream.WriteAsync(report, ct);
+
+            if (report[Constants.Report.Index.Type] == Constants.Report.Type.Command && report[Constants.Report.Index.CommandName] == Constants.Report.Command.EnterBootloader)
             {
                 ForceDisconnect();
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error sending data to device: {ex.Message}");
+            _logger?.LogError(ex, "Error sending raw report to device.");
         }
-
     }
 
     public string GetDeviceInfo()
     {
-        return _isDeviceConnected && _device != null ? $"RvlDevice: {_device.GetManufacturer()}:{_device.GetProductName()} SN: {_device.GetSerialNumber()} ({_device.VendorID:X4}:{_device.ProductID:X4})" : "RvlDevice not connected.";
+        return _isDeviceConnected && _device != null
+            ? $"RvlDevice: {_device.GetManufacturer()}:{_device.GetProductName()} SN: {_device.GetSerialNumber()} ({_device.VendorID:X4}:{_device.ProductID:X4})"
+            : "RvlDevice not connected.";
     }
 
     public void Dispose()
@@ -98,7 +127,7 @@ public class RvlDevice : IRvlDevice, IDisposable
     {
         _isDeviceConnected = false;
         _eventHandler?.Invoke(Constants.Events.DeviceDisconnected);
-        Console.WriteLine("RvlDevice disconnected.");
+        _logger?.LogWarning("RvlDevice disconnected.");
     }
 
     private void ConnectToDevice()
@@ -110,8 +139,9 @@ public class RvlDevice : IRvlDevice, IDisposable
         {
             _deviceNotFoundEventCount = 0;
             _eventHandler?.Invoke(Constants.Events.DeviceConnected);
-            Console.WriteLine($"RvlDevice: {GetDeviceInfo()}");
-            Console.WriteLine("RvlDevice connected.");
+            _logger?.LogInformation($"RvlDevice: {GetDeviceInfo()}");
+            _logger?.LogInformation("RvlDevice connected.");
+
         }
         else
         {
@@ -119,7 +149,7 @@ public class RvlDevice : IRvlDevice, IDisposable
             if (_deviceNotFoundEventCount == 1)
             {
                 _eventHandler?.Invoke(Constants.Events.DeviceNotFound);
-                Console.WriteLine("RvlDevice not found.");
+                _logger?.LogWarning("RvlDevice not found.");
             }
         }
     }

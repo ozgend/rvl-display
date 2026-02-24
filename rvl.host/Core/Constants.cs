@@ -1,10 +1,14 @@
-namespace Rvl.Host.App;
+namespace Rvl.Display.Core;
 
 public struct Constants
 {
-    public const int MaxReconnectAttempts = 10;
-    public const int ReconnectDelayMs = 5000;
-    public const int SensorPollIntervalMs = 2000;
+    public const string ServiceName = "Rvl.Display.Service";
+    public const string CliName = "Rvl.Display.Cli";
+    public const string PipeName = "rvl-display";
+    public readonly static string PipeAddress = $"\\\\.\\pipe\\{PipeName}";
+    public const int SensorPollIntervalMs = 1000;
+    public const int DeviceReconnectIntervalMs = 1000;
+    public static int PipeConnectTimeoutMs = 1000;
 
     public struct Events
     {
@@ -48,6 +52,8 @@ public struct Constants
             public const int CpuUtilization = 3;
             public const int GpuTemp = 4;
             public const int GpuUtilization = 5;
+            public const int CpuFan = 6;
+            public const int GpuFan = 7;
         }
 
         public struct Command

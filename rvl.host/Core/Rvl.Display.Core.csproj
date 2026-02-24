@@ -1,19 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>Rvl.Host.App</AssemblyName>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>Rvl.Display.Core</AssemblyName>
+    <PublishSingleFile>false</PublishSingleFile>
+    <NoWarn>CA1416,CA1873</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="HidSharp" Version="2.6.4" />
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.3" />
     <PackageReference Include="System.IO.Ports" Version="10.0.3" />
     <PackageReference Include="System.Management" Version="10.0.3" />
   </ItemGroup>
-
 </Project>
