@@ -11,11 +11,6 @@ a custom hardware to monitor system sensors via 1.8" TFT LCD, powered by a Raspb
 
 ## Project Structure
 
-- [rvl.host/](rvl.host/): C# .NET solution for host-side applications.
-  - [rvl.host/Cli/](rvl.host/Cli/): Command-line interface for manual control and testing.
-
-  - [rvl.host/Core/](rvl.host/Core/): Shared logic between host applications.
-
 ### rvl.display firmware
 
 - [rvl.device.fw/](rvl.device.fw/): PlatformIO project for the Raspberry Pi Pico firmware.
@@ -39,8 +34,8 @@ a custom hardware to monitor system sensors via 1.8" TFT LCD, powered by a Raspb
 
 ### TODO
 
-- [ ] add cpu, gpu fan sensors
-- [ ] display temp colors based on thresholds
+- [ ] add cpu, gpu fan sensors to display
 - [ ] 3D print a custom case
 - [ ] spi dma to lcd
 - [ ] sprite rendering for lcd
+- [ ] display temp colors based on thresholds

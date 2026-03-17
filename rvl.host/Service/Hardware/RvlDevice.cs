@@ -2,7 +2,6 @@ using HidSharp;
 using Microsoft.Extensions.Logging;
 using Rvl.Display.Core;
 using Rvl.Display.Core.Interfaces;
-using Rvl.Display.Core.Model;
 
 namespace Rvl.Display.Service.Hardware;
 
@@ -47,32 +46,7 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
                 _logger?.LogError("Error: Cannot communicate with device, will not send payload");
                 return;
             }
-            RvlMonitorData? monitorData = null;
-            RvlCommandData? commandData = null;
-
-            byte[] report = new byte[Constants.Report.Length];
-            report[Constants.Report.Index.ReportId] = Constants.Report.Null;
-            report[Constants.Report.Index.Type] = payload.Type;
-
-            switch (payload.Type)
-            {
-                case Constants.Report.Type.Data:
-                    monitorData = payload as RvlMonitorData ?? throw new InvalidCastException("Invalid payload type for MonitorData");
-                    report[Constants.Report.Index.CpuTemp] = (byte)monitorData.CpuTemperature;
-                    report[Constants.Report.Index.CpuUtilization] = (byte)monitorData.CpuUtilization;
-                    report[Constants.Report.Index.GpuTemp] = (byte)monitorData.GpuTemperature;
-                    report[Constants.Report.Index.GpuUtilization] = (byte)monitorData.GpuUtilization;
-                    break;
-                case Constants.Report.Type.Command:
-                    commandData = payload as RvlCommandData ?? throw new InvalidCastException("Invalid payload type for CommandData");
-                    report[Constants.Report.Index.CommandName] = commandData.Command;
-                    report[Constants.Report.Index.CommandValue] = commandData.Value;
-                    break;
-                default:
-                    _logger?.LogError("Error: Unknown payload type, cannot send.");
-                    return;
-            }
-
+            byte[] report = payload.ToReport();
             await SendRawAsync(report, ct);
         }
         catch (Exception ex)
@@ -97,7 +71,8 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
 
             await _stream.WriteAsync(report, ct);
 
-            if (report[Constants.Report.Index.Type] == Constants.Report.Type.Command && report[Constants.Report.Index.CommandName] == Constants.Report.Command.EnterBootloader)
+            // disconnect if bootloader command is sent
+            if (report[Constants.Report.PayloadType.TypeIndex] == Constants.Report.PayloadType.Command && report[Constants.Report.CommandPayloadIndex.CommandName] == Constants.Report.Command.EnterBootloader)
             {
                 ForceDisconnect();
             }

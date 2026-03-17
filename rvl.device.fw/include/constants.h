@@ -7,8 +7,11 @@ struct SensorData
 {
   uint8_t cpuTemp;
   uint8_t cpuUtilization;
+  uint16_t cpuFan;
   uint8_t gpuTemp;
   uint8_t gpuUtilization;
+  uint16_t gpuFan;
+  uint16_t chasisFan;
 };
 
 bool isSensorDataDifferent(const SensorData &a, const SensorData &b)
@@ -16,7 +19,10 @@ bool isSensorDataDifferent(const SensorData &a, const SensorData &b)
   return a.cpuTemp != b.cpuTemp ||
          a.cpuUtilization != b.cpuUtilization ||
          a.gpuTemp != b.gpuTemp ||
-         a.gpuUtilization != b.gpuUtilization;
+         a.gpuUtilization != b.gpuUtilization ||
+         a.cpuFan != b.cpuFan ||
+         a.gpuFan != b.gpuFan ||
+         a.chasisFan != b.chasisFan;
 }
 
 namespace Constants
@@ -38,18 +44,28 @@ namespace Constants
     static constexpr uint8_t Ok = 0xAA;
     static constexpr uint8_t Error = 0xEE;
 
-    static constexpr uint8_t DataPayload = 0xDD;
-    static constexpr uint8_t CommandPayload = 0xCC;
-
-    namespace Index
+    namespace PayloadType
     {
-      static constexpr int Type = 0;
-      static constexpr int CommandName = 1;
-      static constexpr int CommandValue = 2;
-      static constexpr int CpuTemp = 1;
-      static constexpr int CpuUtilization = 2;
-      static constexpr int GpuTemp = 3;
-      static constexpr int GpuUtilization = 4;
+      static constexpr uint8_t TypeIndex = 0;
+      static constexpr uint8_t Data = 0xDD;
+      static constexpr uint8_t Command = 0xCC;
+    }
+
+    namespace CommandPayloadIndex
+    {
+      static constexpr uint8_t CommandName = 1;
+      static constexpr uint8_t CommandValue = 2;
+    }
+
+    namespace ValuePayloadIndex
+    {
+      static constexpr uint8_t CpuTemp = 1;
+      static constexpr uint8_t CpuUtilization = 2;
+      static constexpr uint8_t CpuFan = 3; // +1 for int16_t
+      static constexpr uint8_t GpuTemp = 5;
+      static constexpr uint8_t GpuUtilization = 6;
+      static constexpr uint8_t GpuFan = 7;    // +1 for int16_t
+      static constexpr uint8_t ChasisFan = 9; // +1 for int16_t
     }
 
     namespace Command

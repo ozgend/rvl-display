@@ -14,6 +14,7 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
 
     private IHardware? _cpu;
     private IHardware? _gpu;
+    private IHardware? _motherboard;
 
     public RvlSensorMonitor(IOptionsMonitor<RvlDisplayConfigOptions> options, ILogger<RvlSensorMonitor>? logger = null)
     {
@@ -24,8 +25,8 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
         {
             IsCpuEnabled = true,
             IsGpuEnabled = true,
+            IsMotherboardEnabled = true,
             // IsMemoryEnabled = true,
-            // IsMotherboardEnabled = true,
             // IsControllerEnabled = true,
             // IsNetworkEnabled = true,
             // IsStorageEnabled = true,
@@ -49,6 +50,7 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
 
         _cpu = _computer.Hardware.FirstOrDefault(h => h.HardwareType == HardwareType.Cpu);
         _gpu = _computer.Hardware.FirstOrDefault(h => (h.HardwareType == HardwareType.GpuAmd || h.HardwareType == HardwareType.GpuNvidia || h.HardwareType == HardwareType.GpuIntel) && h.Sensors.Any(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Gpu.Fan, StringComparison.OrdinalIgnoreCase)));
+        _motherboard = _computer.Hardware.FirstOrDefault(h => h.HardwareType == HardwareType.Motherboard);
 
         if (_cpu == null)
         {
@@ -66,6 +68,7 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
 
         _logger?.LogInformation("CPU: {CpuName}", _cpu?.Name ?? "Unknown");
         _logger?.LogInformation("GPU: {GpuName}", _gpu?.Name ?? "Unknown");
+        _logger?.LogInformation("Motherboard: {MotherboardName}", _motherboard?.Name ?? "Unknown");
 
         return !hasError;
     }
@@ -83,8 +86,10 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
             _cpu.Update();
             var cpuTemperatureSensor = _cpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Temperature && s.Name.Contains(_options.CurrentValue.Cpu.Temperature, StringComparison.OrdinalIgnoreCase));
             var cpuUtilizationSensor = _cpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name.Contains(_options.CurrentValue.Cpu.Utilization, StringComparison.OrdinalIgnoreCase));
-            data.CpuTemperature = (int)(cpuTemperatureSensor?.Value ?? 0);
-            data.CpuUtilization = (int)(cpuUtilizationSensor?.Value ?? 0);
+            var cpuFanSensor = _cpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Cpu.Fan, StringComparison.OrdinalIgnoreCase));
+            data.CpuTemperature = (byte)(cpuTemperatureSensor?.Value ?? 0);
+            data.CpuUtilization = (byte)(cpuUtilizationSensor?.Value ?? 0);
+            data.CpuFan = (byte)(cpuFanSensor?.Value ?? 0);
             data.CpuName = _cpu.Name;
         }
 
@@ -97,9 +102,22 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
             _gpu.Update();
             var gpuTemperatureSensor = _gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Temperature && s.Name.Contains(_options.CurrentValue.Gpu.Temperature, StringComparison.OrdinalIgnoreCase));
             var gpuUtilizationSensor = _gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name.Contains(_options.CurrentValue.Gpu.Utilization, StringComparison.OrdinalIgnoreCase));
-            data.GpuTemperature = (int)(gpuTemperatureSensor?.Value ?? 0);
-            data.GpuUtilization = (int)(gpuUtilizationSensor?.Value ?? 0);
+            var gpuFanSensor = _gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Gpu.Fan, StringComparison.OrdinalIgnoreCase));
+            data.GpuTemperature = (byte)(gpuTemperatureSensor?.Value ?? 0);
+            data.GpuUtilization = (byte)(gpuUtilizationSensor?.Value ?? 0);
+            data.GpuFan = (byte)(gpuFanSensor?.Value ?? 0);
             data.GpuName = _gpu.Name;
+        }
+
+        if (_motherboard == null)
+        {
+            _logger?.LogError("Error: Motherboard not initialized.");
+        }
+        else
+        {
+            _motherboard.Update();
+            var chasisFanSensor = _motherboard.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Motherboard.ChasisFan, StringComparison.OrdinalIgnoreCase));
+            data.ChasisFan = (byte)(chasisFanSensor?.Value ?? 0);
         }
 
         return Task.FromResult(data);
@@ -110,6 +128,7 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
         _computer.Close();
         _cpu = null;
         _gpu = null;
+        _motherboard = null;
         GC.SuppressFinalize(this);
     }
 }

@@ -15,8 +15,8 @@ unsigned long lastLedToggle = 0;
 
 TFT_eSPI tft = TFT_eSPI();
 Adafruit_USBD_HID usb_hid;
-SensorData dataPrevious{0, 0, 0, 0};
-SensorData dataCurrent{0, 0, 0, 0};
+SensorData dataPrevious{0, 0, 0, 0, 0, 0, 0};
+SensorData dataCurrent{0, 0, 0, 0, 0, 0, 0};
 
 void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
 {
@@ -28,14 +28,17 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
 
   digitalWrite(PIN_LED, HIGH);
 
-  uint8_t payloadType = buffer[Constants::Report::Index::Type];
+  uint8_t payloadType = buffer[Constants::Report::PayloadType::TypeIndex];
 
-  if (payloadType == Constants::Report::DataPayload)
+  if (payloadType == Constants::Report::PayloadType::Data)
   {
-    dataCurrent.cpuTemp = buffer[Constants::Report::Index::CpuTemp];
-    dataCurrent.cpuUtilization = buffer[Constants::Report::Index::CpuUtilization];
-    dataCurrent.gpuTemp = buffer[Constants::Report::Index::GpuTemp];
-    dataCurrent.gpuUtilization = buffer[Constants::Report::Index::GpuUtilization];
+    dataCurrent.cpuTemp = buffer[Constants::Report::ValuePayloadIndex::CpuTemp];
+    dataCurrent.cpuUtilization = buffer[Constants::Report::ValuePayloadIndex::CpuUtilization];
+    dataCurrent.cpuFan = (int16_t)(buffer[Constants::Report::ValuePayloadIndex::CpuFan] | (buffer[Constants::Report::ValuePayloadIndex::CpuFan + 1] << 8));
+    dataCurrent.gpuTemp = buffer[Constants::Report::ValuePayloadIndex::GpuTemp];
+    dataCurrent.gpuUtilization = buffer[Constants::Report::ValuePayloadIndex::GpuUtilization];
+    dataCurrent.gpuFan = (int16_t)(buffer[Constants::Report::ValuePayloadIndex::GpuFan] | (buffer[Constants::Report::ValuePayloadIndex::GpuFan + 1] << 8));
+    dataCurrent.chasisFan = (int16_t)(buffer[Constants::Report::ValuePayloadIndex::ChasisFan] | (buffer[Constants::Report::ValuePayloadIndex::ChasisFan + 1] << 8));
 
     if (!isSensorDataDifferent(dataPrevious, dataCurrent))
     {
@@ -45,12 +48,12 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
     drawValues(tft, dataCurrent);
     dataPrevious = dataCurrent;
   }
-  else if (payloadType == Constants::Report::CommandPayload)
+  else if (payloadType == Constants::Report::PayloadType::Command)
   {
     clearMessage(tft);
 
-    uint8_t commandName = buffer[Constants::Report::Index::CommandName];
-    uint8_t commandValue = buffer[Constants::Report::Index::CommandValue];
+    uint8_t commandName = buffer[Constants::Report::CommandPayloadIndex::CommandName];
+    uint8_t commandValue = buffer[Constants::Report::CommandPayloadIndex::CommandValue];
 
     if (commandName == Constants::Report::Command::MessageClear)
     {
