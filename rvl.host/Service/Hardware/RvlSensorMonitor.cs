@@ -75,7 +75,7 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
 
     public Task<RvlMonitorData> Poll(CancellationToken ct = default)
     {
-        var data = new RvlMonitorData();
+        var dataStruct = RvlMonitorData.ZeroStruct();
 
         if (_cpu == null)
         {
@@ -87,10 +87,9 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
             var cpuTemperatureSensor = _cpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Temperature && s.Name.Contains(_options.CurrentValue.Cpu.Temperature, StringComparison.OrdinalIgnoreCase));
             var cpuUtilizationSensor = _cpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name.Contains(_options.CurrentValue.Cpu.Utilization, StringComparison.OrdinalIgnoreCase));
             var cpuFanSensor = _cpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Cpu.Fan, StringComparison.OrdinalIgnoreCase));
-            data.CpuTemperature = (byte)(cpuTemperatureSensor?.Value ?? 0);
-            data.CpuUtilization = (byte)(cpuUtilizationSensor?.Value ?? 0);
-            data.CpuFan = (byte)(cpuFanSensor?.Value ?? 0);
-            data.CpuName = _cpu.Name;
+            dataStruct.CpuTemp = (byte)(cpuTemperatureSensor?.Value ?? 0);
+            dataStruct.CpuUtil = (byte)(cpuUtilizationSensor?.Value ?? 0);
+            dataStruct.CpuFan = (ushort)(cpuFanSensor?.Value ?? 0);
         }
 
         if (_gpu == null)
@@ -103,10 +102,9 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
             var gpuTemperatureSensor = _gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Temperature && s.Name.Contains(_options.CurrentValue.Gpu.Temperature, StringComparison.OrdinalIgnoreCase));
             var gpuUtilizationSensor = _gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name.Contains(_options.CurrentValue.Gpu.Utilization, StringComparison.OrdinalIgnoreCase));
             var gpuFanSensor = _gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Gpu.Fan, StringComparison.OrdinalIgnoreCase));
-            data.GpuTemperature = (byte)(gpuTemperatureSensor?.Value ?? 0);
-            data.GpuUtilization = (byte)(gpuUtilizationSensor?.Value ?? 0);
-            data.GpuFan = (byte)(gpuFanSensor?.Value ?? 0);
-            data.GpuName = _gpu.Name;
+            dataStruct.GpuTemp = (byte)(gpuTemperatureSensor?.Value ?? 0);
+            dataStruct.GpuUtil = (byte)(gpuUtilizationSensor?.Value ?? 0);
+            dataStruct.GpuFan = (ushort)(gpuFanSensor?.Value ?? 0);
         }
 
         if (_motherboard == null)
@@ -117,8 +115,15 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
         {
             _motherboard.Update();
             var chasisFanSensor = _motherboard.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Motherboard.ChasisFan, StringComparison.OrdinalIgnoreCase));
-            data.ChasisFan = (byte)(chasisFanSensor?.Value ?? 0);
+            dataStruct.ChasisFan = (ushort)(chasisFanSensor?.Value ?? 0);
         }
+
+        var data = new RvlMonitorData
+        {
+            Data = dataStruct,
+            CpuName = _cpu?.Name ?? string.Empty,
+            GpuName = _gpu?.Name ?? string.Empty
+        };
 
         return Task.FromResult(data);
     }

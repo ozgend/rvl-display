@@ -8,7 +8,7 @@ namespace Rvl.Display.Cli;
 public class RvlDeviceCommand
 {
     public required string Name { get; init; }
-    public required IRvlDevicePayload<RvlCommandData> Payload { get; init; }
+    public required IRvlDevicePayload<RvlCommandDataStruct> Payload { get; init; }
 }
 
 public class GuiCommand : RvlDeviceCommand

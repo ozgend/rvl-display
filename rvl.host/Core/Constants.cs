@@ -36,29 +36,17 @@ public struct Constants
         public const byte Ok = 0xaa;
         public const byte Error = 0xee;
 
-        public struct PayloadType
+        public struct Type
         {
-            public const byte ReportIdIndex = 0;
-            public const byte TypeIndex = 1;
             public const byte Data = 0xdd;
             public const byte Command = 0xcc;
         }
 
-        public struct CommandPayloadIndex
+        public struct Index
         {
-            public const byte CommandName = 1;
-            public const byte CommandValue = 2;
-        }
-
-        public struct ValuePayloadIndex
-        {
-            public const byte CpuTemp = 2;
-            public const byte CpuUtilization = 3;
-            public const byte CpuFan = 4; // +1 for int16_t
-            public const byte GpuTemp = 6;
-            public const byte GpuUtilization = 7;
-            public const byte GpuFan = 8;    // +1 for int16_t
-            public const byte ChasisFan = 10; // +1 for int16_t
+            public const byte ReportId = 0;
+            public const byte Type = 1;
+            public const byte Command = 2;
         }
 
         public struct Command

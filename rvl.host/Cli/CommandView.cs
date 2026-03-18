@@ -63,7 +63,7 @@ internal partial class CommandView
     }
 
 
-    private async Task SendCommandAsync(IRvlDevicePayload<RvlCommandData> payload, string commandName)
+    private async Task SendCommandAsync(IRvlDevicePayload<RvlCommandDataStruct> payload, string commandName)
     {
         await ConnectToPipeAsync();
         if (!_pipeClient.IsConnected)

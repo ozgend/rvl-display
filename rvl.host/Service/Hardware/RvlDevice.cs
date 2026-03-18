@@ -9,7 +9,7 @@ public interface IRvlDevice
 {
     bool IsConnected { get; }
     bool Initialize(Action<string> handler);
-    Task SendAsync<T>(IRvlDevicePayload<T> payload, CancellationToken ct);
+    Task SendAsync<TStruct>(IRvlDevicePayload<TStruct> payload, CancellationToken ct) where TStruct : struct;
     Task SendRawAsync(byte[] report, CancellationToken ct);
     string GetDeviceInfo();
     void ForceDisconnect();
@@ -37,7 +37,7 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
         return true;
     }
 
-    public async Task SendAsync<T>(IRvlDevicePayload<T> payload, CancellationToken ct)
+    public async Task SendAsync<TStruct>(IRvlDevicePayload<TStruct> payload, CancellationToken ct) where TStruct : struct
     {
         try
         {
@@ -62,6 +62,7 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
             if (report.Length != Constants.Report.Length)
             {
                 _logger?.LogError($"Error: Report must be {Constants.Report.Length} bytes, received: {report.Length} bytes.");
+                return;
             }
 
             if (!_isDeviceConnected || _stream == null)
@@ -72,7 +73,7 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
             await _stream.WriteAsync(report, ct);
 
             // disconnect if bootloader command is sent
-            if (report[Constants.Report.PayloadType.TypeIndex] == Constants.Report.PayloadType.Command && report[Constants.Report.CommandPayloadIndex.CommandName] == Constants.Report.Command.EnterBootloader)
+            if (report[Constants.Report.Index.Type] == Constants.Report.Type.Command && report[Constants.Report.Index.Command] == Constants.Report.Command.EnterBootloader)
             {
                 ForceDisconnect();
             }

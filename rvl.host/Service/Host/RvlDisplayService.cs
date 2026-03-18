@@ -50,7 +50,7 @@ public sealed class RvlDisplayService(
         }
 
         await Task.WhenAll(
-            Task.Run(() => _sink.EnqueueAsync(RvlMonitorData.Zero(), ct)),
+            Task.Run(() => _sink.EnqueueAsync(RvlMonitorData.Empty(), ct)),
             Task.Run(() => _sink.EnqueueAsync(RvlCommandData.New(Constants.Report.Command.MessageClear), ct))
         );
 
@@ -60,8 +60,8 @@ public sealed class RvlDisplayService(
     public override async Task StopAsync(CancellationToken ct)
     {
         await Task.WhenAll(
-            Task.Run(() => _device.SendAsync(RvlMonitorData.Zero(), CancellationToken.None)),
-            Task.Run(() => _device.SendAsync(RvlCommandData.New(Constants.Report.Command.MessageCheckHost), CancellationToken.None))
+            Task.Run(() => _device.SendAsync(RvlMonitorData.Empty(), ct), ct),
+            Task.Run(() => _device.SendAsync(RvlCommandData.New(Constants.Report.Command.MessageCheckHost), ct), ct)
         );
         await base.StopAsync(ct);
 
