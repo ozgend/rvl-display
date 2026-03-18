@@ -70,7 +70,12 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
                 return;
             }
 
-            await _stream.WriteAsync(report, ct);
+            // windows HID report: 1 byte reportid + 64 byte payload
+            var hidReport = new byte[Constants.Report.Length + 1];
+            hidReport[0] = Constants.Report.Null;
+            Buffer.BlockCopy(report, 0, hidReport, 1, report.Length);
+
+            await _stream.WriteAsync(hidReport, ct);
 
             // disconnect if bootloader command is sent
             if (report[Constants.Report.Index.Type] == Constants.Report.Type.Command && report[Constants.Report.Index.Command] == Constants.Report.Command.EnterBootloader)

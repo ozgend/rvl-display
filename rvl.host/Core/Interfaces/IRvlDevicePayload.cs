@@ -15,13 +15,10 @@ public abstract class RvlDevicePayloadBase<TStruct> : IRvlDevicePayload<TStruct>
     public abstract TStruct Data { get; set; }
     public byte[] ToReport()
     {
-        // windows HID report: 1 byte reportid + 64 byte payload
-        var report = new byte[Constants.Report.Length + 1];
-        report[0] = Constants.Report.Null;
-        report[1] = Type;
-
-        // dump struct to array +2 offset 
-        MemoryMarshal.Write(report.AsSpan(2), this.Data);
+        var report = new byte[Constants.Report.Length];
+        report[Constants.Report.Index.Type] = Type;
+        // dump struct after type +1 offset
+        MemoryMarshal.Write(report.AsSpan(Constants.Report.Index.Type + 1), this.Data);
         return report;
     }
 }

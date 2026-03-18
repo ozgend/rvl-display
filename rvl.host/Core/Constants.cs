@@ -31,7 +31,7 @@ public struct Constants
 
     public struct Report
     {
-        public const int Length = 64; // 1 byte for Report ID + 64 bytes for data
+        public const int Length = 64; // Internal payload length; Windows HID adds 1-byte report ID at transport write.
         public const byte Null = 0x00;
         public const byte Ok = 0xaa;
         public const byte Error = 0xee;
@@ -44,9 +44,8 @@ public struct Constants
 
         public struct Index
         {
-            public const byte ReportId = 0;
-            public const byte Type = 1;
-            public const byte Command = 2;
+            public const byte Type = 0;
+            public const byte Command = 1;
         }
 
         public struct Command
