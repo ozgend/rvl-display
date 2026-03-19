@@ -33,8 +33,10 @@ public sealed class RvlDisplayConfigOptions
 
     public sealed class MotherboardOptions
     {
-        [Required(ErrorMessage = "Motherboard.ChasisFan sensor name is required.")]
-        public required string ChasisFan { get; set; }
+        [Required(ErrorMessage = "Motherboard.Temperature sensor name is required.")]
+        public required string Temperature { get; set; }
+        [Required(ErrorMessage = "Motherboard.ChassisFan sensor name is required.")]
+        public required string ChassisFan { get; set; }
     }
 
     public override string ToString()
@@ -43,6 +45,6 @@ public sealed class RvlDisplayConfigOptions
             $"SensorPollIntervalMs: {SensorPollIntervalMs}\n" +
             $"Cpu: Temperature: [{Cpu.Temperature}], Utilization: [{Cpu.Utilization}], Fan: [{Cpu.Fan}]\n" +
             $"Gpu: Temperature: [{Gpu.Temperature}], Utilization: [{Gpu.Utilization}], Fan: [{Gpu.Fan}]\n" +
-            $"Motherboard: ChasisFan: [{Motherboard.ChasisFan}]";
+            $"Motherboard: Temperature: [{Motherboard.Temperature}], ChassisFan: [{Motherboard.ChassisFan}]";
     }
 }

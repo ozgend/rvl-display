@@ -2,78 +2,97 @@
 #include "models.h"
 #include <TFT_eSPI.h>
 
-static const unsigned char PROGMEM image_temperature[] = {0x1c, 0x00, 0x22, 0x02, 0x2b, 0x05, 0x2a, 0x02, 0x2b, 0x38, 0x2a, 0x60, 0x2b, 0x40, 0x2a, 0x40, 0x2a, 0x60, 0x49, 0x38, 0x9c, 0x80, 0xae, 0x80, 0xbe, 0x80, 0x9c, 0x80, 0x41, 0x00, 0x3e, 0x00};
+const int COLOR_CPU = 0x5FA;
+const int COLOR_GPU = 0xF206;
 
 void drawValues(TFT_eSPI &tft, RvlMonitorDataStruct &data)
 {
   char buffer[10];
 
+  // cpuFanValue
+  sprintf(buffer, "%4d", data.cpuFan);
+  tft.setTextColor(TFT_CYAN);
+  tft.setFreeFont(&FreeSans9pt7b);
+  tft.fillRect(28, 6, 48, 16, TFT_BLACK);
+  tft.drawString(buffer, 30, 7);
+
   // cpuTempValue
+  buffer[0] = '\0';
   sprintf(buffer, "%2d", data.cpuTemp);
-  tft.setTextColor(0x86DF);
+  tft.setTextColor(COLOR_CPU);
   tft.setFreeFont(&FreeSans18pt7b);
-  tft.fillRect(54, 0, 44, 32, 0x0);
-  tft.drawString(buffer, 56, 0);
+  tft.fillRect(77, 0, 44, 29, TFT_BLACK);
+  tft.drawString(buffer, 82, 0);
 
   // cpuUtilVar
   buffer[0] = '\0';
   sprintf(buffer, "%3d %%", data.cpuUtilization);
   tft.setTextColor(TFT_SILVER);
   tft.setFreeFont(&FreeSans9pt7b);
-  tft.fillRect(54, 32, 52, 20, 0x0);
+  tft.fillRect(78, 33, 50, 18, TFT_BLACK);
+  tft.drawString(buffer, 79, 34);
 
-  tft.drawString(buffer, 56, 34);
+  // gpuFanValue
+  buffer[0] = '\0';
+  sprintf(buffer, "%4d", data.gpuFan);
+  tft.setTextColor(TFT_PINK);
+  tft.setFreeFont(&FreeSans9pt7b);
+  tft.fillRect(28, 77, 48, 16, TFT_BLACK);
+  tft.drawString(buffer, 30, 77);
 
   // gpuTempValue
   buffer[0] = '\0';
   sprintf(buffer, "%2d", data.gpuTemp);
-  tft.setTextColor(0xF206);
+  tft.setTextColor(COLOR_GPU);
   tft.setFreeFont(&FreeSans18pt7b);
-  tft.fillRect(54, 70, 44, 32, 0x0);
-  tft.drawString(buffer, 56, 70);
+  tft.fillRect(77, 70, 44, 29, TFT_BLACK);
+  tft.drawString(buffer, 82, 70);
 
   // gpuUtilVar
   buffer[0] = '\0';
   sprintf(buffer, "%3d %%", data.gpuUtilization);
   tft.setTextColor(TFT_SILVER);
   tft.setFreeFont(&FreeSans9pt7b);
-  tft.fillRect(54, 102, 52, 20, 0x0);
-
-  tft.drawString(buffer, 56, 104);
+  tft.fillRect(78, 102, 50, 18, TFT_BLACK);
+  tft.drawString(buffer, 79, 104);
 }
 
 void clearMessage(TFT_eSPI &tft)
 {
-  tft.fillRect(0, 142, 128, 20, TFT_BLACK);
+  tft.fillRect(0, 152, 128, 8, TFT_BLACK);
 }
 
 void drawMessage(TFT_eSPI &tft, uint16_t color, const char *message)
 {
   clearMessage(tft);
   tft.setTextColor(color, TFT_BLACK);
-  tft.setFreeFont(&FreeMono9pt7b);
-  tft.drawString(message, 0, 142);
+  tft.setFreeFont();
+  tft.drawString(message, 0, 152);
 }
 
 // static text and logos
 void drawStatic(TFT_eSPI &tft)
 {
   tft.fillScreen(TFT_BLACK);
+  tft.setFreeFont();
+  tft.setTextColor(TFT_SILVER);
 
-  // temperature gauge
-  tft.drawEllipse(102, 5, 3, 3, 0x5FA);
-  tft.drawBitmap(108, 11, image_temperature, 16, 16, 0xFF47);
-  tft.drawEllipse(102, 75, 3, 3, 0xF206);
-  tft.drawBitmap(108, 81, image_temperature, 16, 16, 0xCEE7);
+  // cpu
+  // -- icon
+  tft.fillRect(4, 10, 20, 20, COLOR_CPU);
+  // -- fan unit
+  tft.drawString("rpm", 30, 28);
+  // -- temp unit
+  tft.fillEllipse(124, 5, 3, 3, COLOR_CPU);
 
-  // cpu icon
-  tft.drawRoundRect(9, 10, 36, 36, 4, 0x5FA);
-  tft.fillRect(17, 18, 20, 20, 0x5FA);
-
-  // gpu icon
-  tft.drawRect(12, 77, 22, 38, 0xF206);
-  tft.fillEllipse(23, 87, 6, 6, 0xF206);
-  tft.fillEllipse(23, 105, 6, 6, 0xF206);
-  tft.fillRect(34, 89, 6, 23, 0xF206);
-  tft.drawLine(37, 117, 4, 117, 0xF206);
+  // gpu
+  // -- icon
+  tft.drawRect(4, 77, 20, 38, COLOR_GPU);
+  tft.fillRect(2, 79, 3, 23, COLOR_GPU);
+  tft.fillEllipse(14, 105, 6, 6, COLOR_GPU);
+  tft.fillEllipse(14, 87, 6, 6, COLOR_GPU);
+  // -- fan unit
+  tft.drawString("rpm", 30, 98);
+  // -- temp unit
+  tft.fillEllipse(124, 75, 3, 3, COLOR_GPU);
 }

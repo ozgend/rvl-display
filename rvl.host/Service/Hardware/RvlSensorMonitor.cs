@@ -114,15 +114,18 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
         else
         {
             _motherboard.Update();
-            var chasisFanSensor = _motherboard.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Motherboard.ChasisFan, StringComparison.OrdinalIgnoreCase));
-            dataStruct.ChasisFan = (ushort)(chasisFanSensor?.Value ?? 0);
+            var motherboardTemperatureSensor = _motherboard.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Temperature && s.Name.Contains(_options.CurrentValue.Motherboard.Temperature, StringComparison.OrdinalIgnoreCase));
+            var chassisFanSensor = _motherboard.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Motherboard.ChassisFan, StringComparison.OrdinalIgnoreCase));
+            dataStruct.ChassisTemp = (byte)(motherboardTemperatureSensor?.Value ?? 0);
+            dataStruct.ChassisFan = (ushort)(chassisFanSensor?.Value ?? 0);
         }
 
         var data = new RvlMonitorData
         {
             Data = dataStruct,
             CpuName = _cpu?.Name ?? string.Empty,
-            GpuName = _gpu?.Name ?? string.Empty
+            GpuName = _gpu?.Name ?? string.Empty,
+            MotherboardName = _motherboard?.Name ?? string.Empty
         };
 
         return Task.FromResult(data);

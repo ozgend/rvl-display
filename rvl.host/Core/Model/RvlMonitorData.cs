@@ -12,7 +12,8 @@ public struct RvlMonitorDataStruct
     public byte GpuUtil;
     public ushort CpuFan;
     public ushort GpuFan;
-    public ushort ChasisFan;
+    public byte ChassisTemp;
+    public ushort ChassisFan;
 }
 
 public class RvlMonitorData : RvlDevicePayloadBase<RvlMonitorDataStruct>
@@ -22,6 +23,7 @@ public class RvlMonitorData : RvlDevicePayloadBase<RvlMonitorDataStruct>
 
     public string CpuName { get; set; } = string.Empty;
     public string GpuName { get; set; } = string.Empty;
+    public string MotherboardName { get; set; } = string.Empty;
 
     public static RvlMonitorData Empty()
     {
@@ -41,7 +43,8 @@ public class RvlMonitorData : RvlDevicePayloadBase<RvlMonitorDataStruct>
             GpuUtil = 0,
             CpuFan = 0,
             GpuFan = 0,
-            ChasisFan = 0
+            ChassisFan = 0,
+            ChassisTemp = 0
         };
     }
 }

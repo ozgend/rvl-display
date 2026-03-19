@@ -1,6 +1,8 @@
 #ifndef RVL_CONSTANTS_H
 #define RVL_CONSTANTS_H
 
+#include <cstdint>
+
 namespace Constants
 {
 
