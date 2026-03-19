@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Rvl.Display.Core;
 using Rvl.Display.Core.Interfaces;
 using Rvl.Display.Core.Model;
-using Rvl.Display.Service.Hardware;
+using Rvl.Display.Core.Services;
 
 namespace Rvl.Display.Service.Host;
 

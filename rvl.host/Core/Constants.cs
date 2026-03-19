@@ -68,5 +68,10 @@ public struct Constants
 
             public const byte EnterBootloader = 0x77;
         }
+
+        public struct LocalCommand
+        {
+            public const byte ListSensors = 0xa1;
+        }
     }
 }

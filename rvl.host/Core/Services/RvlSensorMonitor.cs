@@ -4,24 +4,25 @@ using Microsoft.Extensions.Options;
 using Rvl.Display.Core.Interfaces;
 using Rvl.Display.Core.Model;
 
-namespace Rvl.Display.Service.Hardware;
+namespace Rvl.Display.Core.Services;
 
 public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
 {
     private readonly IOptionsMonitor<RvlDisplayConfigOptions> _options;
-    private readonly Computer _computer;
     private readonly ILogger<RvlSensorMonitor>? _logger;
 
     private IHardware? _cpu;
     private IHardware? _gpu;
     private IHardware? _motherboard;
 
+    public Computer Computer { get; internal set; }
+
     public RvlSensorMonitor(IOptionsMonitor<RvlDisplayConfigOptions> options, ILogger<RvlSensorMonitor>? logger = null)
     {
         _options = options;
         _logger = logger;
 
-        _computer = new Computer()
+        Computer = new Computer()
         {
             IsCpuEnabled = true,
             IsGpuEnabled = true,
@@ -40,17 +41,17 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
         _logger?.LogInformation("init: SensorMonitor");
         _logger?.LogInformation("SensorMonitor config: {@Config}", _options.CurrentValue);
 
-        _computer.Open();
+        Computer.Open();
 
-        if (_computer.Hardware == null || !_computer.Hardware.Any())
+        if (Computer.Hardware == null || !Computer.Hardware.Any())
         {
             _logger?.LogError("No hardware found.");
             return false;
         }
 
-        _cpu = _computer.Hardware.FirstOrDefault(h => h.HardwareType == HardwareType.Cpu);
-        _gpu = _computer.Hardware.FirstOrDefault(h => (h.HardwareType == HardwareType.GpuAmd || h.HardwareType == HardwareType.GpuNvidia || h.HardwareType == HardwareType.GpuIntel) && h.Sensors.Any(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Gpu.Fan, StringComparison.OrdinalIgnoreCase)));
-        _motherboard = _computer.Hardware.FirstOrDefault(h => h.HardwareType == HardwareType.Motherboard);
+        _cpu = Computer.Hardware.FirstOrDefault(h => h.HardwareType == HardwareType.Cpu);
+        _gpu = Computer.Hardware.FirstOrDefault(h => (h.HardwareType == HardwareType.GpuAmd || h.HardwareType == HardwareType.GpuNvidia || h.HardwareType == HardwareType.GpuIntel) && h.Sensors.Any(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Gpu.Fan, StringComparison.OrdinalIgnoreCase)));
+        _motherboard = Computer.Hardware.FirstOrDefault(h => h.HardwareType == HardwareType.Motherboard);
 
         if (_cpu == null)
         {
@@ -133,7 +134,7 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
 
     public void Dispose()
     {
-        _computer.Close();
+        Computer.Close();
         _cpu = null;
         _gpu = null;
         _motherboard = null;

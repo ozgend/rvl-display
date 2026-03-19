@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/HWMonCli/">
+    <Project Path=".\HWMonCli\Rvl.Display.HWMonCli.csproj" />
+  </Folder>
   <Folder Name="/Cli/">
     <Project Path=".\Cli\Rvl.Display.Cli.csproj" />
   </Folder>
