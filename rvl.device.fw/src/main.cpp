@@ -40,7 +40,7 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
       return;
     }
 
-    drawValues(tft, dataCurrent);
+    drawValues(dataCurrent);
     dataPrevious = dataCurrent;
   }
   else if (payloadType == Constants::Report::Type::Command)
@@ -126,10 +126,12 @@ void setup()
 
   SPI.begin();
   tft.init();
+  tft.initDMA();
   tft.setRotation(4);
   tft.setFreeFont(FF18);
+  initSprites(tft);
   drawStatic(tft);
-  drawValues(tft, dataCurrent);
+  drawValues(dataCurrent);
   drawMessage(tft, TFT_CYAN, "init...");
 
   TinyUSBDevice.setID(Constants::DeviceInfo::VendorId, Constants::DeviceInfo::ProductId);
