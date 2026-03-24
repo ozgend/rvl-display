@@ -1,26 +1,30 @@
+using System.Runtime.InteropServices;
 using Rvl.Display.Core.Interfaces;
 
 namespace Rvl.Display.Core.Model;
 
-public sealed class RvlCommandData(byte command, byte? value = 0) : IRvlDevicePayload<RvlCommandData>
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct RvlCommandDataStruct
 {
-    public byte Type => Constants.Report.Type.Command;
-    public byte Command { get; set; } = command;
-    public byte Value { get; set; } = value ?? 0;
+    public byte Command;
+    public byte Value;
+}
 
-    public byte[] ToReport()
-    {
-        var report = new byte[Constants.Report.Length];
-        report[Constants.Report.Index.ReportId] = Constants.Report.Null;
-        report[Constants.Report.Index.Type] = Constants.Report.Type.Command;
-        report[Constants.Report.Index.CommandName] = Command;
-        report[Constants.Report.Index.CommandValue] = Value;
-        return report;
-    }
+public class RvlCommandData : RvlDevicePayloadBase<RvlCommandDataStruct>
+{
+    public override byte Type => Constants.Report.Type.Command;
+    public override RvlCommandDataStruct Data { get; set; }
 
-    public static IRvlDevicePayload<RvlCommandData> New(byte command, byte? value = 0)
+    public static RvlCommandData New(byte command, byte? value = 0)
     {
-        return new RvlCommandData(command, value);
+        return new RvlCommandData
+        {
+            Data = new RvlCommandDataStruct
+            {
+                Command = command,
+                Value = value ?? 0
+            }
+        };
     }
 }
 

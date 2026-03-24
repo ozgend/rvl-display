@@ -1,16 +1,14 @@
 using HidSharp;
 using Microsoft.Extensions.Logging;
-using Rvl.Display.Core;
 using Rvl.Display.Core.Interfaces;
-using Rvl.Display.Core.Model;
 
-namespace Rvl.Display.Service.Hardware;
+namespace Rvl.Display.Core.Services;
 
 public interface IRvlDevice
 {
     bool IsConnected { get; }
     bool Initialize(Action<string> handler);
-    Task SendAsync<T>(IRvlDevicePayload<T> payload, CancellationToken ct);
+    Task SendAsync<TStruct>(IRvlDevicePayload<TStruct> payload, CancellationToken ct) where TStruct : struct;
     Task SendRawAsync(byte[] report, CancellationToken ct);
     string GetDeviceInfo();
     void ForceDisconnect();
@@ -38,7 +36,7 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
         return true;
     }
 
-    public async Task SendAsync<T>(IRvlDevicePayload<T> payload, CancellationToken ct)
+    public async Task SendAsync<TStruct>(IRvlDevicePayload<TStruct> payload, CancellationToken ct) where TStruct : struct
     {
         try
         {
@@ -47,32 +45,7 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
                 _logger?.LogError("Error: Cannot communicate with device, will not send payload");
                 return;
             }
-            RvlMonitorData? monitorData = null;
-            RvlCommandData? commandData = null;
-
-            byte[] report = new byte[Constants.Report.Length];
-            report[Constants.Report.Index.ReportId] = Constants.Report.Null;
-            report[Constants.Report.Index.Type] = payload.Type;
-
-            switch (payload.Type)
-            {
-                case Constants.Report.Type.Data:
-                    monitorData = payload as RvlMonitorData ?? throw new InvalidCastException("Invalid payload type for MonitorData");
-                    report[Constants.Report.Index.CpuTemp] = (byte)monitorData.CpuTemperature;
-                    report[Constants.Report.Index.CpuUtilization] = (byte)monitorData.CpuUtilization;
-                    report[Constants.Report.Index.GpuTemp] = (byte)monitorData.GpuTemperature;
-                    report[Constants.Report.Index.GpuUtilization] = (byte)monitorData.GpuUtilization;
-                    break;
-                case Constants.Report.Type.Command:
-                    commandData = payload as RvlCommandData ?? throw new InvalidCastException("Invalid payload type for CommandData");
-                    report[Constants.Report.Index.CommandName] = commandData.Command;
-                    report[Constants.Report.Index.CommandValue] = commandData.Value;
-                    break;
-                default:
-                    _logger?.LogError("Error: Unknown payload type, cannot send.");
-                    return;
-            }
-
+            byte[] report = payload.ToReport();
             await SendRawAsync(report, ct);
         }
         catch (Exception ex)
@@ -88,6 +61,7 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
             if (report.Length != Constants.Report.Length)
             {
                 _logger?.LogError($"Error: Report must be {Constants.Report.Length} bytes, received: {report.Length} bytes.");
+                return;
             }
 
             if (!_isDeviceConnected || _stream == null)
@@ -95,9 +69,15 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
                 return;
             }
 
-            await _stream.WriteAsync(report, ct);
+            // windows HID report: 1 byte reportid + 64 byte payload
+            var hidReport = new byte[Constants.Report.Length + 1];
+            hidReport[0] = Constants.Report.Null;
+            Buffer.BlockCopy(report, 0, hidReport, 1, report.Length);
 
-            if (report[Constants.Report.Index.Type] == Constants.Report.Type.Command && report[Constants.Report.Index.CommandName] == Constants.Report.Command.EnterBootloader)
+            await _stream.WriteAsync(hidReport, ct);
+
+            // disconnect if bootloader command is sent
+            if (report[Constants.Report.Index.Type] == Constants.Report.Type.Command && report[Constants.Report.Index.Command] == Constants.Report.Command.EnterBootloader)
             {
                 ForceDisconnect();
             }

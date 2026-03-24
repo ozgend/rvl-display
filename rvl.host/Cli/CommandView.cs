@@ -1,5 +1,5 @@
 using System.IO.Pipes;
-using CommunityToolkit.Mvvm.Messaging;
+using LibreHardwareMonitor.Hardware;
 using Rvl.Display.Core;
 using Rvl.Display.Core.Interfaces;
 using Rvl.Display.Core.Model;
@@ -18,11 +18,24 @@ enum LabelStatus
 internal partial class CommandView
 {
     private readonly NamedPipeClientStream _pipeClient;
+    private readonly Computer _computer;
 
     public CommandView()
     {
         InitializeComponent();
         _pipeClient = new NamedPipeClientStream(".", Constants.PipeName, PipeDirection.InOut);
+        _computer = new Computer()
+        {
+            IsCpuEnabled = true,
+            IsGpuEnabled = true,
+            IsMemoryEnabled = true,
+            IsMotherboardEnabled = true,
+            IsControllerEnabled = true,
+            IsStorageEnabled = true,
+            IsBatteryEnabled = false,
+            IsNetworkEnabled = false,
+            IsPsuEnabled = false
+        };
     }
 
     public void Receive(RvlDeviceCommand message)
@@ -54,16 +67,57 @@ internal partial class CommandView
 
     private void HandleButtonEvent(object sender, EventArgs e)
     {
-        if (((Button)sender)?.Data is not RvlDeviceCommand command)
+        if (((Button)sender)?.Data is not GuiCommand command)
         {
             return;
         }
 
-        SendCommandAsync(command.Payload, command.Name).ConfigureAwait(false);
+        if (command.IsLocalCommand)
+        {
+            SendLocalCommand(command.Payload.ToReport()[Constants.Report.Index.Command], command.Name);
+        }
+        else
+        {
+            _ = SendRemoteCommandAsync(command.Payload, command.Name).ConfigureAwait(false);
+        }
     }
 
+    private void SendLocalCommand(byte commandByte, string commandName)
+    {
+        _computer.Open();
+        if (_computer.Hardware?.Any() != true)
+        {
+            SetMessage(LabelStatus.Warn, $"No hardware found for local command: {commandName}");
+            return;
+        }
 
-    private async Task SendCommandAsync(IRvlDevicePayload<RvlCommandData> payload, string commandName)
+        SetMessage(LabelStatus.Info, $"Executing local command: {commandName}");
+
+        // list computer hardware and sensors to ./hw.txt for debugging
+        string filepath = AppContext.BaseDirectory + "/hw.txt";
+
+        using StreamWriter hwWriter = new(filepath, new FileStreamOptions
+        {
+            Mode = FileMode.Create,
+            Access = FileAccess.Write,
+            Share = FileShare.Read
+        });
+        foreach (var hardware in _computer.Hardware)
+        {
+            hwWriter.WriteLine($"Hardware: {hardware.Name} ({hardware.HardwareType})");
+            hardware.Update();
+            foreach (var sensor in hardware.Sensors)
+            {
+                hwWriter.WriteLine($"  Sensor: {sensor.Name} ({sensor.SensorType}) - Value: {sensor.Value}");
+            }
+        }
+        hwWriter.Flush();
+
+
+        SetMessage(LabelStatus.Ok, $"Executed local command: {commandName} (see hw.txt for details)");
+    }
+
+    private async Task SendRemoteCommandAsync(IRvlDevicePayload<RvlCommandDataStruct> payload, string commandName)
     {
         await ConnectToPipeAsync();
         if (!_pipeClient.IsConnected)

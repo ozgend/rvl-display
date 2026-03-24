@@ -2,7 +2,7 @@ using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Rvl.Display.Core;
 using Rvl.Display.Core.Interfaces;
-using Rvl.Display.Service.Hardware;
+using Rvl.Display.Core.Services;
 
 namespace Rvl.Display.Service.Host;
 
@@ -36,7 +36,7 @@ public sealed class RvlHidReportSink : IRvlHidReportSink
         return _channel.Writer.WriteAsync(report64, ct);
     }
 
-    public ValueTask EnqueueAsync<T>(IRvlDevicePayload<T> payload, CancellationToken ct)
+    public ValueTask EnqueueAsync<TStruct>(IRvlDevicePayload<TStruct> payload, CancellationToken ct) where TStruct : struct
     {
         var report = payload.ToReport();
         return EnqueueAsync(report, ct);

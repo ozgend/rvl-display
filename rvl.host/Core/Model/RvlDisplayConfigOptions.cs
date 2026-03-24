@@ -9,6 +9,7 @@ public sealed class RvlDisplayConfigOptions
 
     public required CpuOptions Cpu { get; set; }
     public required GpuOptions Gpu { get; set; }
+    public required MotherboardOptions Motherboard { get; set; }
 
     public sealed class CpuOptions
     {
@@ -30,11 +31,20 @@ public sealed class RvlDisplayConfigOptions
         public required string Fan { get; set; }
     }
 
+    public sealed class MotherboardOptions
+    {
+        [Required(ErrorMessage = "Motherboard.Temperature sensor name is required.")]
+        public required string Temperature { get; set; }
+        [Required(ErrorMessage = "Motherboard.ChassisFan sensor name is required.")]
+        public required string ChassisFan { get; set; }
+    }
+
     public override string ToString()
     {
         return $"Configuration:\n" +
             $"SensorPollIntervalMs: {SensorPollIntervalMs}\n" +
             $"Cpu: Temperature: [{Cpu.Temperature}], Utilization: [{Cpu.Utilization}], Fan: [{Cpu.Fan}]\n" +
-            $"Gpu: Temperature: [{Gpu.Temperature}], Utilization: [{Gpu.Utilization}], Fan: [{Gpu.Fan}]";
+            $"Gpu: Temperature: [{Gpu.Temperature}], Utilization: [{Gpu.Utilization}], Fan: [{Gpu.Fan}]\n" +
+            $"Motherboard: Temperature: [{Motherboard.Temperature}], ChassisFan: [{Motherboard.ChassisFan}]";
     }
 }

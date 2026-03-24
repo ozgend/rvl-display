@@ -5,12 +5,12 @@ namespace Rvl.Display.Cli;
 internal partial class CommandView : Window
 {
     public const int ViewWidth = 98;
-    public const int ViewHeight = 24;
+    public const int ViewHeight = 32;
 
     private View _infoView;
     private View _buttonContainerView;
     private Label _statusLabel;
-    private Label _messageLabel;
+    private TextView _messageLabel;
     private const int _ButtonWidth = 28;
     private const int _ButtonContainerViewHeight = 16;
     private readonly int _ButtonLayoutSize = Commands.List.Max(c => c.Category);
@@ -59,7 +59,7 @@ internal partial class CommandView : Window
                     X = 1,
                     Y = (command.Order - 1) * 2 + 1,
                     CanFocus = true,
-                    ColorScheme = new ColorScheme { Focus = new Terminal.Gui.Attribute(Color.Black, Color.BrightCyan) }
+                    ColorScheme = new ColorScheme { Focus = new Terminal.Gui.Attribute(Color.Black, Color.BrightCyan) },
                 };
 
                 button.Accepting += (s, e) =>
@@ -85,12 +85,15 @@ internal partial class CommandView : Window
             Y = 1,
         };
 
-        _messageLabel = new Label
+        _messageLabel = new TextView
         {
             Title = "Message",
             Text = "...",
             X = 1,
             Y = Pos.Bottom(_statusLabel) + 1,
+            ReadOnly = true,
+            Height = 3,
+            Width = Dim.Fill(2),
         };
 
         _infoView.Add(_statusLabel);

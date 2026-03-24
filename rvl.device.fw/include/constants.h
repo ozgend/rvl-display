@@ -3,22 +3,6 @@
 
 #include <cstdint>
 
-struct SensorData
-{
-  uint8_t cpuTemp;
-  uint8_t cpuUtilization;
-  uint8_t gpuTemp;
-  uint8_t gpuUtilization;
-};
-
-bool isSensorDataDifferent(const SensorData &a, const SensorData &b)
-{
-  return a.cpuTemp != b.cpuTemp ||
-         a.cpuUtilization != b.cpuUtilization ||
-         a.gpuTemp != b.gpuTemp ||
-         a.gpuUtilization != b.gpuUtilization;
-}
-
 namespace Constants
 {
 
@@ -38,18 +22,15 @@ namespace Constants
     static constexpr uint8_t Ok = 0xAA;
     static constexpr uint8_t Error = 0xEE;
 
-    static constexpr uint8_t DataPayload = 0xDD;
-    static constexpr uint8_t CommandPayload = 0xCC;
-
+    namespace Type
+    {
+      static constexpr uint8_t Data = 0xDD;
+      static constexpr uint8_t Command = 0xCC;
+    }
+    
     namespace Index
     {
-      static constexpr int Type = 0;
-      static constexpr int CommandName = 1;
-      static constexpr int CommandValue = 2;
-      static constexpr int CpuTemp = 1;
-      static constexpr int CpuUtilization = 2;
-      static constexpr int GpuTemp = 3;
-      static constexpr int GpuUtilization = 4;
+      static constexpr uint8_t Type = 0;
     }
 
     namespace Command

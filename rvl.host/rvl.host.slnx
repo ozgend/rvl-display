@@ -1,11 +1,14 @@
 <Solution>
+  <Folder Name="/HWMonCli/">
+    <Project Path=".\HWMonCli\Rvl.Display.HWMonCli.csproj" />
+  </Folder>
   <Folder Name="/Cli/">
-    <Project Path="c:/Users/RVL/dev/denolk-hive/rvl-lcd-display/rvl.host/Cli/Rvl.Display.Cli.csproj" />
+    <Project Path=".\Cli\Rvl.Display.Cli.csproj" />
   </Folder>
   <Folder Name="/Core/">
-    <Project Path="c:/Users/RVL/dev/denolk-hive/rvl-lcd-display/rvl.host/Core/Rvl.Display.Core.csproj" />
+    <Project Path=".\Core\Rvl.Display.Core.csproj" />
   </Folder>
   <Folder Name="/Service/">
-    <Project Path="c:/Users/RVL/dev/denolk-hive/rvl-lcd-display/rvl.host/Service/Rvl.Display.Service.csproj" />
+    <Project Path=".\Service\Rvl.Display.Service.csproj" />
   </Folder>
 </Solution>

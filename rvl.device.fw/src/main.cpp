@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "models.h"
 #include <Arduino.h>
 #include "hardware/watchdog.h"
 #include <stdarg.h>
@@ -15,8 +16,8 @@ unsigned long lastLedToggle = 0;
 
 TFT_eSPI tft = TFT_eSPI();
 Adafruit_USBD_HID usb_hid;
-SensorData dataPrevious{0, 0, 0, 0};
-SensorData dataCurrent{0, 0, 0, 0};
+RvlMonitorDataStruct dataPrevious{0, 0, 0, 0, 0, 0, 0};
+RvlMonitorDataStruct dataCurrent{0, 0, 0, 0, 0, 0, 0};
 
 void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
 {
@@ -30,85 +31,82 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
 
   uint8_t payloadType = buffer[Constants::Report::Index::Type];
 
-  if (payloadType == Constants::Report::DataPayload)
+  if (payloadType == Constants::Report::Type::Data)
   {
-    dataCurrent.cpuTemp = buffer[Constants::Report::Index::CpuTemp];
-    dataCurrent.cpuUtilization = buffer[Constants::Report::Index::CpuUtilization];
-    dataCurrent.gpuTemp = buffer[Constants::Report::Index::GpuTemp];
-    dataCurrent.gpuUtilization = buffer[Constants::Report::Index::GpuUtilization];
+    memcpy(&dataCurrent, &buffer[1], sizeof(RvlMonitorDataStruct));
 
-    if (!isSensorDataDifferent(dataPrevious, dataCurrent))
+    if (!isMonitorDataDifferent(dataPrevious, dataCurrent))
     {
       return;
     }
 
-    drawValues(tft, dataCurrent);
+    drawValues(dataCurrent);
     dataPrevious = dataCurrent;
   }
-  else if (payloadType == Constants::Report::CommandPayload)
+  else if (payloadType == Constants::Report::Type::Command)
   {
     clearMessage(tft);
 
-    uint8_t commandName = buffer[Constants::Report::Index::CommandName];
-    uint8_t commandValue = buffer[Constants::Report::Index::CommandValue];
+    RvlCommandDataStruct commandPayload;
+    memcpy(&commandPayload, &buffer[1], sizeof(RvlCommandDataStruct));
 
-    if (commandName == Constants::Report::Command::MessageClear)
+    if (commandPayload.commandName == Constants::Report::Command::MessageClear)
     {
       clearMessage(tft);
     }
-    if (commandName == Constants::Report::Command::MessageAwait)
+    if (commandPayload.commandName == Constants::Report::Command::MessageAwait)
     {
       drawMessage(tft, TFT_SKYBLUE, "awaiting...");
     }
-    else if (commandName == Constants::Report::Command::MessageCheckHost)
+    else if (commandPayload.commandName == Constants::Report::Command::MessageCheckHost)
     {
       drawMessage(tft, TFT_ORANGE, "check host");
     }
-    else if (commandName == Constants::Report::Command::MessageHighTemp)
+    else if (commandPayload.commandName == Constants::Report::Command::MessageHighTemp)
     {
       drawMessage(tft, TFT_RED, "high temp!");
     }
-    else if (commandName == Constants::Report::Command::MessageLowRpm)
+    else if (commandPayload.commandName == Constants::Report::Command::MessageLowRpm)
     {
       drawMessage(tft, TFT_RED, "low rpm!");
     }
-    else if (commandName == Constants::Report::Command::ClearDisplay)
+    else if (commandPayload.commandName == Constants::Report::Command::ClearDisplay)
     {
       tft.fillScreen(TFT_BLACK);
     }
-    else if (commandName == Constants::Report::Command::RestartDevice)
+    else if (commandPayload.commandName == Constants::Report::Command::RestartDevice)
     {
       drawMessage(tft, TFT_YELLOW, "restarting...");
       delay(1000);
       watchdog_reboot(0, 0, 1);
     }
-    else if (commandName == Constants::Report::Command::SetBrightnessOff)
+    else if (commandPayload.commandName == Constants::Report::Command::SetBrightnessOff)
     {
       analogWrite(TFT_BL, 0);
     }
-    else if (commandName == Constants::Report::Command::SetBrightnessLow)
+    else if (commandPayload.commandName == Constants::Report::Command::SetBrightnessLow)
     {
       analogWrite(TFT_BL, 64);
     }
-    else if (commandName == Constants::Report::Command::SetBrightnessMedium)
+    else if (commandPayload.commandName == Constants::Report::Command::SetBrightnessMedium)
     {
       analogWrite(TFT_BL, 128);
     }
-    else if (commandName == Constants::Report::Command::SetBrightnessHigh)
+    else if (commandPayload.commandName == Constants::Report::Command::SetBrightnessHigh)
     {
       analogWrite(TFT_BL, 255);
     }
-    else if (commandName == Constants::Report::Command::LedOff)
+    else if (commandPayload.commandName == Constants::Report::Command::LedOff)
     {
       willBlinkLed = false;
       digitalWrite(PIN_LED, LOW);
     }
-    else if (commandName == Constants::Report::Command::LedOn)
+    else if (commandPayload.commandName == Constants::Report::Command::LedOn)
     {
       willBlinkLed = true;
       digitalWrite(PIN_LED, HIGH);
     }
-    else if (commandName == Constants::Report::Command::EnterBootloader)
+    else if (commandPayload.commandName == Constants::Report::Command::EnterBootloader)
     {
       drawMessage(tft, TFT_YELLOW, "flash...");
       TinyUSBDevice.detach();
@@ -128,10 +126,12 @@ void setup()
 
   SPI.begin();
   tft.init();
+  tft.initDMA();
   tft.setRotation(4);
   tft.setFreeFont(FF18);
+  initSprites(tft);
   drawStatic(tft);
-  drawValues(tft, dataCurrent);
+  drawValues(dataCurrent);
   drawMessage(tft, TFT_CYAN, "init...");
 
   TinyUSBDevice.setID(Constants::DeviceInfo::VendorId, Constants::DeviceInfo::ProductId);
