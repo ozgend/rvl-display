@@ -51,6 +51,7 @@ public sealed class RvlDisplayService(
 
         await Task.WhenAll(
             Task.Run(() => _sink.EnqueueAsync(RvlMonitorData.Empty(), ct)),
+            Task.Run(() => _sink.EnqueueAsync(RvlCommandData.New(Constants.Report.Command.SetBrightnessHigh), ct)),
             Task.Run(() => _sink.EnqueueAsync(RvlCommandData.New(Constants.Report.Command.MessageClear), ct))
         );
 
@@ -59,9 +60,11 @@ public sealed class RvlDisplayService(
 
     public override async Task StopAsync(CancellationToken ct)
     {
+        // send final signals to device directly, _sink may be stopped
         await Task.WhenAll(
             Task.Run(() => _device.SendAsync(RvlMonitorData.Empty(), ct), ct),
-            Task.Run(() => _device.SendAsync(RvlCommandData.New(Constants.Report.Command.MessageCheckHost), ct), ct)
+            Task.Run(() => _device.SendAsync(RvlCommandData.New(Constants.Report.Command.MessageCheckHost), ct), ct),
+            Task.Run(() => _device.SendAsync(RvlCommandData.New(Constants.Report.Command.SetBrightnessOff), ct), ct)
         );
         await base.StopAsync(ct);
 
