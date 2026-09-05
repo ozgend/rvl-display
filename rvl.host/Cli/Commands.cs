@@ -21,6 +21,7 @@ public class GuiCommand : RvlDeviceCommand
 
 public enum CommandCategory
 {
+    Service = 0,
     Messages = 1,
     Brightness = 2,
     Device = 3
@@ -30,6 +31,12 @@ public static class Commands
 {
     public static readonly List<GuiCommand> List =
     [
+        new GuiCommand { Name = "StartStream", Category = (int)CommandCategory.Service, Order = 1, HotKey = Key.F4, Payload = RvlCommandData.New(Constants.Report.Command.StartStream), IsLocalCommand = true },
+        new GuiCommand { Name = "StopStream", Category = (int)CommandCategory.Service, Order = 2, HotKey = Key.F5, Payload = RvlCommandData.New(Constants.Report.Command.StopStream), IsLocalCommand = true },
+        new GuiCommand { Name = "ServiceRestart", Category = (int)CommandCategory.Service, Order = 3, HotKey = Key.F3, Payload = RvlCommandData.New(Constants.Report.Command.ServiceRestart), IsLocalCommand = true },
+        new GuiCommand { Name = "ServiceStart", Category = (int)CommandCategory.Service, Order = 4, HotKey = Key.F1, Payload = RvlCommandData.New(Constants.Report.Command.ServiceStart), IsLocalCommand = true },
+        new GuiCommand { Name = "ServiceStop", Category = (int)CommandCategory.Service, Order = 5, HotKey = Key.F2, Payload = RvlCommandData.New(Constants.Report.Command.ServiceStop), IsLocalCommand = true },
+
         new GuiCommand { Name = "MessageClear", Category = (int)CommandCategory.Messages, Order = 1, HotKey = Key.D1, Payload = RvlCommandData.New(Constants.Report.Command.MessageClear) },
         new GuiCommand { Name = "MessageAwait", Category = (int)CommandCategory.Messages, Order = 2, HotKey = Key.D2, Payload = RvlCommandData.New(Constants.Report.Command.MessageAwait) },
         new GuiCommand { Name = "MessageCheckHost", Category = (int)CommandCategory.Messages, Order = 3, HotKey = Key.D3, Payload = RvlCommandData.New(Constants.Report.Command.MessageCheckHost) },

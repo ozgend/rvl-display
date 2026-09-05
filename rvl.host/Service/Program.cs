@@ -18,12 +18,13 @@ builder.Services.AddWindowsService(options => { options.ServiceName = Constants.
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddEventLog();
-builder.Logging.SetMinimumLevel(LogLevel.Debug);
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 builder.Services.AddSingleton<IRvlDevice, RvlDevice>();
 builder.Services.AddSingleton<IRvlSensorMonitor, RvlSensorMonitor>();
 builder.Services.AddSingleton<IRvlHidReportSink, RvlHidReportSink>();
 builder.Services.AddSingleton<IRvlPipeServer, RvlPipeServer>();
+builder.Services.AddSingleton<RvlTelemetryStreamServer>();
 builder.Services.AddSingleton<IHostLifetime, RvlWindowsServiceLifetime>();
 builder.Services.AddHostedService<RvlDisplayService>();
 
