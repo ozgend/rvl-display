@@ -77,7 +77,7 @@ internal partial class CommandView : Window
             X = 1,
             Y = Pos.Bottom(_buttonContainerView) - 1,
             Width = Dim.Fill(4),
-            Height = 6,
+            Height = 7,
         };
 
         _statusLabel = new Label
@@ -95,7 +95,7 @@ internal partial class CommandView : Window
             X = 1,
             Y = Pos.Bottom(_statusLabel) + 1,
             ReadOnly = true,
-            Height = 3,
+            Height = 4,
             Width = Dim.Fill(2),
         };
 

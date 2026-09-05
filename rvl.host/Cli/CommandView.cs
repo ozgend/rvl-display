@@ -128,14 +128,16 @@ internal partial class CommandView
             SetMessage(LabelStatus.Info, $"Executing local command: {commandName}");
 
             // list computer hardware and sensors to ./hw.txt for debugging
-            string filepath = AppContext.BaseDirectory + "/hw.txt";
-
+            string filepath = AppContext.BaseDirectory + $"lhw\\{DateTime.Now:yyyy-MM-dd-THH-mm-ss}.txt";
+            // create directory if it doesn't exist
+            Directory.CreateDirectory(Path.GetDirectoryName(filepath) ?? throw new InvalidOperationException("path error" + $"{filepath}"));
             using StreamWriter hwWriter = new(filepath, new FileStreamOptions
             {
                 Mode = FileMode.Create,
                 Access = FileAccess.Write,
-                Share = FileShare.Read
+                Share = FileShare.Read,
             });
+
             foreach (var hardware in computer.Hardware)
             {
                 hwWriter.WriteLine($"Hardware: {hardware.Name} ({hardware.HardwareType})");
@@ -147,7 +149,11 @@ internal partial class CommandView
             }
             hwWriter.Flush();
 
-            SetMessage(LabelStatus.Ok, $"Executed local command: {commandName} (see hw.txt for details)");
+            SetMessage(LabelStatus.Ok, $"List: {filepath}");
+        }
+        catch (Exception ex)
+        {
+            SetMessage(LabelStatus.Error, $"{commandName}: {ex.Message}");
         }
         finally
         {
