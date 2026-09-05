@@ -1,4 +1,6 @@
 using System.IO.Pipes;
+using System.Runtime.InteropServices;
+using System.ServiceProcess;
 using LibreHardwareMonitor.Hardware;
 using Rvl.Display.Core;
 using Rvl.Display.Core.Interfaces;
@@ -17,8 +19,9 @@ enum LabelStatus
 
 internal partial class CommandView
 {
-    private readonly NamedPipeClientStream _pipeClient;
+    private NamedPipeClientStream _pipeClient;
     private readonly Computer _computer;
+    private CancellationTokenSource? _streamCancellation;
 
     public CommandView()
     {
@@ -43,26 +46,33 @@ internal partial class CommandView
         SetMessage(LabelStatus.Info, $"Received Command: {message.Name}");
     }
 
-    public async Task ConnectToPipeAsync()
+    public async Task<bool> ConnectToPipeAsync()
     {
         if (_pipeClient.IsConnected)
         {
-            return;
+            Application.Invoke(() => SetStatus(LabelStatus.Info, $"Connected @{Constants.PipeAddress}"));
+            return true;
         }
+
+        _pipeClient.Dispose();
+        _pipeClient = new NamedPipeClientStream(".", Constants.PipeName, PipeDirection.InOut);
 
         try
         {
             await _pipeClient.ConnectAsync(Constants.PipeConnectTimeoutMs);
-            SetStatus(LabelStatus.Info, $"Connected @{Constants.PipeAddress}");
+            Application.Invoke(() => SetStatus(LabelStatus.Info, $"Connected @{Constants.PipeAddress}"));
+            return true;
         }
-        catch (TimeoutException)
+        catch (System.TimeoutException)
         {
-            SetStatus(LabelStatus.Error, $"Timeout while connecting @{Constants.PipeAddress}");
+            Application.Invoke(() => SetStatus(LabelStatus.Error, $"Timeout while connecting @{Constants.PipeAddress}"));
         }
         catch (Exception ex)
         {
-            SetStatus(LabelStatus.Error, $"Failed to connect @{Constants.PipeAddress}: {ex.Message}");
+            Application.Invoke(() => SetStatus(LabelStatus.Error, $"Failed to connect @{Constants.PipeAddress}: {ex.Message}"));
         }
+
+        return false;
     }
 
     private void HandleButtonEvent(object sender, EventArgs e)
@@ -72,9 +82,16 @@ internal partial class CommandView
             return;
         }
 
+        _ = ExecuteCommandAsync(command);
+    }
+
+    private async Task ExecuteCommandAsync(GuiCommand command)
+    {
+        await ConnectToPipeAsync();
+
         if (command.IsLocalCommand)
         {
-            SendLocalCommand(command.Payload.ToReport()[Constants.Report.Index.Command], command.Name);
+            _ = ExecuteLocalCommandAsync(command.Payload.ToReport()[Constants.Report.Index.Command], command.Name);
         }
         else
         {
@@ -82,7 +99,28 @@ internal partial class CommandView
         }
     }
 
-    private void SendLocalCommand(byte commandByte, string commandName)
+    private async Task ExecuteLocalCommandAsync(byte commandByte, string commandName)
+    {
+        switch (commandByte)
+        {
+            case Constants.Report.Command.ServiceStart:
+            case Constants.Report.Command.ServiceStop:
+            case Constants.Report.Command.ServiceRestart:
+                await ManageServiceAsync(commandByte, commandName);
+                break;
+            case Constants.Report.Command.StartStream:
+                StartStream();
+                break;
+            case Constants.Report.Command.StopStream:
+                StopStream();
+                break;
+            default:
+                ListSensors(commandName);
+                break;
+        }
+    }
+
+    private void ListSensors(string commandName)
     {
         _computer.Open();
         if (_computer.Hardware?.Any() != true)
@@ -117,10 +155,135 @@ internal partial class CommandView
         SetMessage(LabelStatus.Ok, $"Executed local command: {commandName} (see hw.txt for details)");
     }
 
+    private async Task ManageServiceAsync(byte commandByte, string commandName)
+    {
+        SetMessage(LabelStatus.Info, $"Executing {commandName}...");
+        try
+        {
+            await Task.Run(() =>
+            {
+                using var service = new ServiceController(Constants.ServiceName);
+                service.Refresh();
+
+                if (commandByte == Constants.Report.Command.ServiceStart)
+                {
+                    StartService(service);
+                }
+                else if (commandByte == Constants.Report.Command.ServiceStop)
+                {
+                    StopService(service);
+                }
+                else
+                {
+                    StopService(service);
+                    service.Refresh();
+                    StartService(service);
+                }
+            });
+            SetMessage(LabelStatus.Ok, $"Executed {commandName}");
+        }
+        catch (Exception ex)
+        {
+            SetMessage(LabelStatus.Error, $"Failed to execute {commandName}: {ex.Message}");
+        }
+    }
+
+    private static void StartService(ServiceController service)
+    {
+        if (service.Status is ServiceControllerStatus.Running or ServiceControllerStatus.StartPending)
+        {
+            return;
+        }
+
+        service.Start();
+        service.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(15));
+    }
+
+    private static void StopService(ServiceController service)
+    {
+        if (service.Status is ServiceControllerStatus.Stopped or ServiceControllerStatus.StopPending)
+        {
+            if (service.Status == ServiceControllerStatus.StopPending)
+            {
+                service.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(15));
+            }
+            return;
+        }
+
+        service.Stop();
+        service.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(15));
+    }
+
+    private void StartStream()
+    {
+        if (_streamCancellation is not null)
+        {
+            SetMessage(LabelStatus.Info, "Sensor stream is already running.");
+            return;
+        }
+
+        _streamCancellation = new CancellationTokenSource();
+        _ = RunStreamAsync(_streamCancellation);
+    }
+
+    private void StopStream()
+    {
+        _streamCancellation?.Cancel();
+        _streamCancellation?.Dispose();
+        _streamCancellation = null;
+        SetMessage(LabelStatus.Ok, "Sensor stream stopped.");
+    }
+
+    private async Task RunStreamAsync(CancellationTokenSource cancellation)
+    {
+        var ct = cancellation.Token;
+        try
+        {
+            await using var stream = new NamedPipeClientStream(".", Constants.StreamPipeName, PipeDirection.In, PipeOptions.Asynchronous);
+            await stream.ConnectAsync(Constants.PipeConnectTimeoutMs, ct);
+            Application.Invoke(() => SetMessage(LabelStatus.Ok, $"Streaming @{Constants.StreamPipeAddress}"));
+
+            var report = new byte[Constants.Report.Length];
+            while (!ct.IsCancellationRequested)
+            {
+                await stream.ReadExactlyAsync(report, ct);
+                if (report[Constants.Report.Index.Type] != Constants.Report.Type.Data)
+                {
+                    continue;
+                }
+
+                var data = MemoryMarshal.Read<RvlMonitorDataStruct>(report.AsSpan(Constants.Report.Index.Type + 1));
+                Application.Invoke(() => UpdateStreamTable(data));
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Application.Invoke(() => SetMessage(LabelStatus.Error, $"Sensor stream failed: {ex.Message}"));
+        }
+        finally
+        {
+            cancellation.Dispose();
+            if (ReferenceEquals(_streamCancellation, cancellation))
+            {
+                _streamCancellation = null;
+            }
+        }
+    }
+
+    private void UpdateStreamTable(RvlMonitorDataStruct data)
+    {
+        _streamTable.Rows[0].ItemArray = ["     CPU ", $" {data.CpuUtil,3} % ", $" {data.CpuTemp,3} *C ", $" {data.CpuFan,4} rpm"];
+        _streamTable.Rows[1].ItemArray = ["     GPU ", $" {data.GpuUtil,3} % ", $" {data.GpuTemp,3} *C ", $" {data.GpuFan,4} rpm"];
+        _streamTable.Rows[2].ItemArray = [" CHASSIS ", " ", $" {data.ChassisTemp,3} *C", $" {data.ChassisFan,4} rpm"];
+        _streamTableView.Update();
+    }
+
     private async Task SendRemoteCommandAsync(IRvlDevicePayload<RvlCommandDataStruct> payload, string commandName)
     {
-        await ConnectToPipeAsync();
-        if (!_pipeClient.IsConnected)
+        if (!await ConnectToPipeAsync())
         {
             SetMessage(LabelStatus.Error, $"Cannot send {commandName}: Not connected.");
             return;

@@ -1,3 +1,4 @@
+using System.Data;
 using Rvl.Display.Core;
 using Terminal.Gui;
 namespace Rvl.Display.Cli;
@@ -5,15 +6,17 @@ namespace Rvl.Display.Cli;
 internal partial class CommandView : Window
 {
     public const int ViewWidth = 98;
-    public const int ViewHeight = 32;
+    public const int ViewHeight = 40;
 
     private View _infoView;
     private View _buttonContainerView;
     private Label _statusLabel;
     private TextView _messageLabel;
+    private TableView _streamTableView;
+    private DataTable _streamTable;
     private const int _ButtonWidth = 28;
     private const int _ButtonContainerViewHeight = 16;
-    private readonly int _ButtonLayoutSize = Commands.List.Max(c => c.Category);
+    private readonly int _ButtonLayoutSize = Enum.GetValues<CommandCategory>().Length;
 
     private void InitializeComponent()
     {
@@ -42,7 +45,7 @@ internal partial class CommandView : Window
                 Width = ViewWidth / _ButtonLayoutSize - 2,
                 Height = Dim.Fill(2),
                 BorderStyle = LineStyle.Dotted,
-                Title = CommandCategory.GetName(typeof(CommandCategory), i + 1),
+                Title = CommandCategory.GetName(typeof(CommandCategory), i),
                 CanFocus = true,
                 ColorScheme = new ColorScheme { Focus = new Terminal.Gui.Attribute(Color.BrightCyan, Color.Black) }
             });
@@ -66,7 +69,7 @@ internal partial class CommandView : Window
                 {
                     HandleButtonEvent(button, e);
                 };
-                _buttonContainerView.Subviews[command.Category - 1].Add(button);
+                _buttonContainerView.Subviews[command.Category].Add(button);
             });
 
         _infoView = new View
@@ -100,6 +103,28 @@ internal partial class CommandView : Window
         _infoView.Add(_messageLabel);
 
         Add(_infoView);
+
+        _streamTable = new DataTable();
+        _streamTable.Columns.Add("  Sensor ");
+        _streamTable.Columns.Add("    Load ");
+        _streamTable.Columns.Add("    Temp ");
+        _streamTable.Columns.Add("   Speed ");
+        _streamTable.Rows.Add("     CPU ", " ", " ", " ");
+        _streamTable.Rows.Add("     GPU ", " ", " ", " ");
+        _streamTable.Rows.Add(" CHASSIS ", " ", " ", " ");
+
+        _streamTableView = new TableView(new DataTableSource(_streamTable))
+        {
+            Title = "Sensor Stream",
+            X = 1,
+            Y = Pos.Bottom(_infoView),
+            Width = Dim.Fill(4),
+            Height = Dim.Fill(1),
+            CanFocus = true,
+            BorderStyle = LineStyle.Single
+        };
+
+        Add(_streamTableView);
     }
 
     protected override bool OnKeyDown(Key key)

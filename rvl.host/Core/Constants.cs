@@ -5,7 +5,9 @@ public struct Constants
     public const string ServiceName = "Rvl.Display.Service";
     public const string CliName = "Rvl.Display.Cli";
     public const string PipeName = "rvl-display";
+    public const string StreamPipeName = "rvl-display-stream";
     public readonly static string PipeAddress = $"\\\\.\\pipe\\{PipeName}";
+    public readonly static string StreamPipeAddress = $"\\\\.\\pipe\\{StreamPipeName}";
     public const int SensorPollIntervalMs = 1000;
     public const int DeviceReconnectIntervalMs = 1000;
     public static int PipeConnectTimeoutMs = 1000;
@@ -50,6 +52,13 @@ public struct Constants
 
         public struct Command
         {
+            public const byte ServiceStart = 0x40;
+            public const byte ServiceStop = 0x41;
+            public const byte ServiceRestart = 0x42;
+            public const byte StartStream = 0x43;
+            public const byte StopStream = 0x44;
+
+
             public const byte MessageClear = 0x10;
             public const byte MessageAwait = 0x1a;
             public const byte MessageCheckHost = 0x1c;

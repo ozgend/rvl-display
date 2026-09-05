@@ -10,8 +10,9 @@ Application.ForceDriver = "NetDriver";
 Application.Init();
 
 using var commandView = new CommandView();
-commandView.Added += async (s, e) =>
+Application.AddIdle(() =>
 {
-    await commandView.ConnectToPipeAsync();
-};
+    _ = commandView.ConnectToPipeAsync();
+    return false;
+});
 Application.Run(commandView);

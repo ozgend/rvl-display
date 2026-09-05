@@ -32,6 +32,36 @@ a custom hardware to monitor system sensors via 1.8" TFT LCD, powered by a Raspb
 - Provides a simple tui for interacting with the device
 - ![cli tui](./docs/cli_tui.png)
 
+## Build
+
+On Windows, install the .NET 10 SDK and PlatformIO, then run:
+
+```powershell
+.\build.ps1
+```
+
+The script builds the host CLI, Windows service, and Pico firmware. Outputs are written to:
+
+- `dist/cli/`
+- `dist/service/`
+- `dist/firmware/rvl-display.uf2`
+
+Use `-Configuration Debug` for debug host builds:
+
+```powershell
+.\build.ps1 -Configuration Debug
+```
+
+Build only one target with `-Target`:
+
+```powershell
+.\build.ps1 -Target cli
+.\build.ps1 -Target service
+.\build.ps1 -Target firmware
+```
+
+The default target is `all`. Individual target builds only replace their own folder under `dist`.
+
 ### TODO
 
 - [ ] add cpu, gpu fan sensors to display

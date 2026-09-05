@@ -12,13 +12,15 @@ public sealed class RvlDisplayService(
     IRvlDevice device,
     IRvlSensorMonitor monitor,
     IRvlHidReportSink sink,
-    IRvlPipeServer pipeServer) : BackgroundService
+    IRvlPipeServer pipeServer,
+    RvlTelemetryStreamServer telemetryStream) : BackgroundService
 {
     private readonly ILogger<RvlDisplayService> _logger = logger;
     private readonly IRvlDevice _device = device;
     private readonly IRvlSensorMonitor _monitor = monitor;
     private readonly IRvlHidReportSink _sink = sink;
     private readonly IRvlPipeServer _pipeServer = pipeServer;
+    private readonly RvlTelemetryStreamServer _telemetryStream = telemetryStream;
 
     public override async Task StartAsync(CancellationToken ct)
     {
@@ -75,9 +77,10 @@ public sealed class RvlDisplayService(
     {
         var sinkTask = _sink.RunAsync(ct);
         var pipeTask = _pipeServer.RunAsync(ct);
+        var streamTask = _telemetryStream.RunAsync(ct);
         var telemetryTask = RunTelemetryLoopAsync(ct);
 
-        await Task.WhenAll(sinkTask, pipeTask, telemetryTask);
+        await Task.WhenAll(sinkTask, pipeTask, streamTask, telemetryTask);
     }
 
     private async Task RunTelemetryLoopAsync(CancellationToken ct)
@@ -94,6 +97,7 @@ public sealed class RvlDisplayService(
 
                 var data = await _monitor.Poll(ct);
                 await _sink.EnqueueAsync(data, ct);
+                _telemetryStream.Publish(data.ToReport());
                 await Task.Delay(Constants.SensorPollIntervalMs, ct);
             }
             catch (OperationCanceledException)

@@ -24,6 +24,7 @@ builder.Services.AddSingleton<IRvlDevice, RvlDevice>();
 builder.Services.AddSingleton<IRvlSensorMonitor, RvlSensorMonitor>();
 builder.Services.AddSingleton<IRvlHidReportSink, RvlHidReportSink>();
 builder.Services.AddSingleton<IRvlPipeServer, RvlPipeServer>();
+builder.Services.AddSingleton<RvlTelemetryStreamServer>();
 builder.Services.AddSingleton<IHostLifetime, RvlWindowsServiceLifetime>();
 builder.Services.AddHostedService<RvlDisplayService>();
 
