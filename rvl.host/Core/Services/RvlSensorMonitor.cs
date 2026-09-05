@@ -14,6 +14,17 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
     private IHardware? _cpu;
     private IHardware? _gpu;
     private IHardware? _motherboard;
+    private ISensor? _cpuTemperatureSensor;
+    private ISensor? _cpuUtilizationSensor;
+    private ISensor? _cpuFanSensor;
+    private ISensor? _gpuTemperatureSensor;
+    private ISensor? _gpuUtilizationSensor;
+    private ISensor? _gpuFanSensor;
+    private ISensor? _motherboardTemperatureSensor;
+    private ISensor? _chassisFanSensor;
+    private bool _isCpuErrorLogged;
+    private bool _isGpuErrorLogged;
+    private bool _isMotherboardErrorLogged;
 
     public Computer Computer { get; internal set; }
 
@@ -53,6 +64,15 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
         _gpu = Computer.Hardware.FirstOrDefault(h => (h.HardwareType == HardwareType.GpuAmd || h.HardwareType == HardwareType.GpuNvidia || h.HardwareType == HardwareType.GpuIntel) && h.Sensors.Any(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Gpu.Fan, StringComparison.OrdinalIgnoreCase)));
         _motherboard = Computer.Hardware.FirstOrDefault(h => h.HardwareType == HardwareType.Motherboard);
 
+        _cpuTemperatureSensor = FindSensor(_cpu, SensorType.Temperature, _options.CurrentValue.Cpu.Temperature);
+        _cpuUtilizationSensor = FindSensor(_cpu, SensorType.Load, _options.CurrentValue.Cpu.Utilization);
+        _cpuFanSensor = FindSensor(_cpu, SensorType.Fan, _options.CurrentValue.Cpu.Fan);
+        _gpuTemperatureSensor = FindSensor(_gpu, SensorType.Temperature, _options.CurrentValue.Gpu.Temperature);
+        _gpuUtilizationSensor = FindSensor(_gpu, SensorType.Load, _options.CurrentValue.Gpu.Utilization);
+        _gpuFanSensor = FindSensor(_gpu, SensorType.Fan, _options.CurrentValue.Gpu.Fan);
+        _motherboardTemperatureSensor = FindSensor(_motherboard, SensorType.Temperature, _options.CurrentValue.Motherboard.Temperature);
+        _chassisFanSensor = FindSensor(_motherboard, SensorType.Fan, _options.CurrentValue.Motherboard.ChassisFan);
+
         if (_cpu == null)
         {
             _logger?.LogError("CPU not found.");
@@ -74,51 +94,55 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
         return !hasError;
     }
 
-    public Task<RvlMonitorData> Poll(CancellationToken ct = default)
+    public RvlMonitorData Poll(CancellationToken ct = default)
     {
         var dataStruct = RvlMonitorData.ZeroStruct();
 
         if (_cpu == null)
         {
-            _logger?.LogError("Error: CPU not initialized.");
+            if (!_isCpuErrorLogged)
+            {
+                _logger?.LogError("Error: CPU not initialized.");
+                _isCpuErrorLogged = true;
+            }
         }
         else
         {
             _cpu.Update();
-            var cpuTemperatureSensor = _cpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Temperature && s.Name.Contains(_options.CurrentValue.Cpu.Temperature, StringComparison.OrdinalIgnoreCase));
-            var cpuUtilizationSensor = _cpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name.Contains(_options.CurrentValue.Cpu.Utilization, StringComparison.OrdinalIgnoreCase));
-            var cpuFanSensor = _cpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Cpu.Fan, StringComparison.OrdinalIgnoreCase));
-            dataStruct.CpuTemp = (byte)(cpuTemperatureSensor?.Value ?? 0);
-            dataStruct.CpuUtil = (byte)(cpuUtilizationSensor?.Value ?? 0);
-            dataStruct.CpuFan = (ushort)(cpuFanSensor?.Value ?? 0);
+            dataStruct.CpuTemp = (byte)(_cpuTemperatureSensor?.Value ?? 0);
+            dataStruct.CpuUtil = (byte)(_cpuUtilizationSensor?.Value ?? 0);
+            dataStruct.CpuFan = (ushort)(_cpuFanSensor?.Value ?? 0);
         }
 
         if (_gpu == null)
         {
-            _logger?.LogError("Error: GPU not initialized.");
+            if (!_isGpuErrorLogged)
+            {
+                _logger?.LogError("Error: GPU not initialized.");
+                _isGpuErrorLogged = true;
+            }
         }
         else
         {
             _gpu.Update();
-            var gpuTemperatureSensor = _gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Temperature && s.Name.Contains(_options.CurrentValue.Gpu.Temperature, StringComparison.OrdinalIgnoreCase));
-            var gpuUtilizationSensor = _gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Load && s.Name.Contains(_options.CurrentValue.Gpu.Utilization, StringComparison.OrdinalIgnoreCase));
-            var gpuFanSensor = _gpu.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Gpu.Fan, StringComparison.OrdinalIgnoreCase));
-            dataStruct.GpuTemp = (byte)(gpuTemperatureSensor?.Value ?? 0);
-            dataStruct.GpuUtil = (byte)(gpuUtilizationSensor?.Value ?? 0);
-            dataStruct.GpuFan = (ushort)(gpuFanSensor?.Value ?? 0);
+            dataStruct.GpuTemp = (byte)(_gpuTemperatureSensor?.Value ?? 0);
+            dataStruct.GpuUtil = (byte)(_gpuUtilizationSensor?.Value ?? 0);
+            dataStruct.GpuFan = (ushort)(_gpuFanSensor?.Value ?? 0);
         }
 
         if (_motherboard == null)
         {
-            _logger?.LogError("Error: Motherboard not initialized.");
+            if (!_isMotherboardErrorLogged)
+            {
+                _logger?.LogError("Error: Motherboard not initialized.");
+                _isMotherboardErrorLogged = true;
+            }
         }
         else
         {
             _motherboard.Update();
-            var motherboardTemperatureSensor = _motherboard.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Temperature && s.Name.Contains(_options.CurrentValue.Motherboard.Temperature, StringComparison.OrdinalIgnoreCase));
-            var chassisFanSensor = _motherboard.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Contains(_options.CurrentValue.Motherboard.ChassisFan, StringComparison.OrdinalIgnoreCase));
-            dataStruct.ChassisTemp = (byte)(motherboardTemperatureSensor?.Value ?? 0);
-            dataStruct.ChassisFan = (ushort)(chassisFanSensor?.Value ?? 0);
+            dataStruct.ChassisTemp = (byte)(_motherboardTemperatureSensor?.Value ?? 0);
+            dataStruct.ChassisFan = (ushort)(_chassisFanSensor?.Value ?? 0);
         }
 
         var data = new RvlMonitorData
@@ -129,7 +153,7 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
             MotherboardName = _motherboard?.Name ?? string.Empty
         };
 
-        return Task.FromResult(data);
+        return data;
     }
 
     public void Dispose()
@@ -138,6 +162,21 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
         _cpu = null;
         _gpu = null;
         _motherboard = null;
+        _cpuTemperatureSensor = null;
+        _cpuUtilizationSensor = null;
+        _cpuFanSensor = null;
+        _gpuTemperatureSensor = null;
+        _gpuUtilizationSensor = null;
+        _gpuFanSensor = null;
+        _motherboardTemperatureSensor = null;
+        _chassisFanSensor = null;
         GC.SuppressFinalize(this);
+    }
+
+    private static ISensor? FindSensor(IHardware? hardware, SensorType sensorType, string name)
+    {
+        return hardware?.Sensors.FirstOrDefault(sensor =>
+            sensor.SensorType == sensorType &&
+            sensor.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
     }
 }

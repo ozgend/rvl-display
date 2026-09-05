@@ -95,9 +95,10 @@ public sealed class RvlDisplayService(
                     continue;
                 }
 
-                var data = await _monitor.Poll(ct);
-                await _sink.EnqueueAsync(data, ct);
-                _telemetryStream.Publish(data.ToReport());
+                var data = _monitor.Poll(ct);
+                var report = data.ToReport();
+                await _sink.EnqueueAsync(report, ct);
+                _telemetryStream.Publish(report);
                 await Task.Delay(Constants.SensorPollIntervalMs, ct);
             }
             catch (OperationCanceledException)
