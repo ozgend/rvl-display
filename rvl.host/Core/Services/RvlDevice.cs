@@ -19,6 +19,7 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
     private HidDevice? _device;
     private HidStream? _stream;
     private Action<string>? _eventHandler;
+    private EventHandler<DeviceListChangedEventArgs>? _deviceListChangedHandler;
     private bool _isDeviceConnected = false;
     private int _deviceNotFoundEventCount;
     private readonly ILogger<RvlDevice> _logger = logger;
@@ -31,7 +32,8 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
     public bool Initialize(Action<string>? handler)
     {
         _eventHandler = handler;
-        DeviceList.Local.Changed += (sender, e) => ConnectToDevice();
+        _deviceListChangedHandler = (_, _) => ConnectToDevice();
+        DeviceList.Local.Changed += _deviceListChangedHandler;
         ConnectToDevice();
         return true;
     }
@@ -60,7 +62,7 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
         {
             if (report.Length != Constants.Report.Length)
             {
-                _logger?.LogError($"Error: Report must be {Constants.Report.Length} bytes, received: {report.Length} bytes.");
+                _logger?.LogError("Error: Report must be {ExpectedLength} bytes, received: {Length} bytes.", Constants.Report.Length, report.Length);
                 return;
             }
 
@@ -97,9 +99,17 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
 
     public void Dispose()
     {
+        if (_deviceListChangedHandler is not null)
+        {
+            DeviceList.Local.Changed -= _deviceListChangedHandler;
+            _deviceListChangedHandler = null;
+        }
+
+        _isDeviceConnected = false;
         _stream?.Dispose();
         _stream = null;
         _device = null;
+        _eventHandler = null;
         GC.SuppressFinalize(this);
     }
 
@@ -112,6 +122,8 @@ public class RvlDevice(ILogger<RvlDevice> logger) : IRvlDevice, IDisposable
 
     private void ConnectToDevice()
     {
+        _stream?.Dispose();
+        _stream = null;
         _device = DeviceList.Local.GetHidDeviceOrNull(Constants.DeviceInfo.VendorId, Constants.DeviceInfo.ProductId);
         _isDeviceConnected = _device != null && _device.TryOpen(out _stream) && _stream != null;
 

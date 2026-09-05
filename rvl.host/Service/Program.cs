@@ -18,7 +18,7 @@ builder.Services.AddWindowsService(options => { options.ServiceName = Constants.
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Logging.AddEventLog();
-builder.Logging.SetMinimumLevel(LogLevel.Debug);
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 builder.Services.AddSingleton<IRvlDevice, RvlDevice>();
 builder.Services.AddSingleton<IRvlSensorMonitor, RvlSensorMonitor>();

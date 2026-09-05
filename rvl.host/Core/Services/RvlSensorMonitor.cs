@@ -22,9 +22,6 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
     private ISensor? _gpuFanSensor;
     private ISensor? _motherboardTemperatureSensor;
     private ISensor? _chassisFanSensor;
-    private bool _isCpuErrorLogged;
-    private bool _isGpuErrorLogged;
-    private bool _isMotherboardErrorLogged;
 
     public Computer Computer { get; internal set; }
 
@@ -98,15 +95,7 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
     {
         var dataStruct = RvlMonitorData.ZeroStruct();
 
-        if (_cpu == null)
-        {
-            if (!_isCpuErrorLogged)
-            {
-                _logger?.LogError("Error: CPU not initialized.");
-                _isCpuErrorLogged = true;
-            }
-        }
-        else
+        if (_cpu != null)
         {
             _cpu.Update();
             dataStruct.CpuTemp = (byte)(_cpuTemperatureSensor?.Value ?? 0);
@@ -114,15 +103,7 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
             dataStruct.CpuFan = (ushort)(_cpuFanSensor?.Value ?? 0);
         }
 
-        if (_gpu == null)
-        {
-            if (!_isGpuErrorLogged)
-            {
-                _logger?.LogError("Error: GPU not initialized.");
-                _isGpuErrorLogged = true;
-            }
-        }
-        else
+        if (_gpu != null)
         {
             _gpu.Update();
             dataStruct.GpuTemp = (byte)(_gpuTemperatureSensor?.Value ?? 0);
@@ -130,15 +111,7 @@ public class RvlSensorMonitor : IRvlSensorMonitor, IDisposable
             dataStruct.GpuFan = (ushort)(_gpuFanSensor?.Value ?? 0);
         }
 
-        if (_motherboard == null)
-        {
-            if (!_isMotherboardErrorLogged)
-            {
-                _logger?.LogError("Error: Motherboard not initialized.");
-                _isMotherboardErrorLogged = true;
-            }
-        }
-        else
+        if (_motherboard != null)
         {
             _motherboard.Update();
             dataStruct.ChassisTemp = (byte)(_motherboardTemperatureSensor?.Value ?? 0);
