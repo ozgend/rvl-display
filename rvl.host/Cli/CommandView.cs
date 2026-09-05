@@ -20,25 +20,12 @@ enum LabelStatus
 internal partial class CommandView
 {
     private NamedPipeClientStream _pipeClient;
-    private readonly Computer _computer;
     private CancellationTokenSource? _streamCancellation;
 
     public CommandView()
     {
         InitializeComponent();
         _pipeClient = new NamedPipeClientStream(".", Constants.PipeName, PipeDirection.InOut);
-        _computer = new Computer()
-        {
-            IsCpuEnabled = true,
-            IsGpuEnabled = true,
-            IsMemoryEnabled = true,
-            IsMotherboardEnabled = true,
-            IsControllerEnabled = true,
-            IsStorageEnabled = true,
-            IsBatteryEnabled = false,
-            IsNetworkEnabled = false,
-            IsPsuEnabled = false
-        };
     }
 
     public void Receive(RvlDeviceCommand message)
@@ -122,37 +109,50 @@ internal partial class CommandView
 
     private void ListSensors(string commandName)
     {
-        _computer.Open();
-        if (_computer.Hardware?.Any() != true)
+        var computer = new Computer
         {
-            SetMessage(LabelStatus.Warn, $"No hardware found for local command: {commandName}");
-            return;
-        }
-
-        SetMessage(LabelStatus.Info, $"Executing local command: {commandName}");
-
-        // list computer hardware and sensors to ./hw.txt for debugging
-        string filepath = AppContext.BaseDirectory + "/hw.txt";
-
-        using StreamWriter hwWriter = new(filepath, new FileStreamOptions
+            IsCpuEnabled = true,
+            IsGpuEnabled = true,
+            IsMotherboardEnabled = true
+        };
+        try
         {
-            Mode = FileMode.Create,
-            Access = FileAccess.Write,
-            Share = FileShare.Read
-        });
-        foreach (var hardware in _computer.Hardware)
-        {
-            hwWriter.WriteLine($"Hardware: {hardware.Name} ({hardware.HardwareType})");
-            hardware.Update();
-            foreach (var sensor in hardware.Sensors)
+            computer.Open();
+
+            if (computer.Hardware?.Any() != true)
             {
-                hwWriter.WriteLine($"  Sensor: {sensor.Name} ({sensor.SensorType}) - Value: {sensor.Value}");
+                SetMessage(LabelStatus.Warn, $"No hardware found for local command: {commandName}");
+                return;
             }
+
+            SetMessage(LabelStatus.Info, $"Executing local command: {commandName}");
+
+            // list computer hardware and sensors to ./hw.txt for debugging
+            string filepath = AppContext.BaseDirectory + "/hw.txt";
+
+            using StreamWriter hwWriter = new(filepath, new FileStreamOptions
+            {
+                Mode = FileMode.Create,
+                Access = FileAccess.Write,
+                Share = FileShare.Read
+            });
+            foreach (var hardware in computer.Hardware)
+            {
+                hwWriter.WriteLine($"Hardware: {hardware.Name} ({hardware.HardwareType})");
+                hardware.Update();
+                foreach (var sensor in hardware.Sensors)
+                {
+                    hwWriter.WriteLine($"  Sensor: {sensor.Name} ({sensor.SensorType}) - Value: {sensor.Value}");
+                }
+            }
+            hwWriter.Flush();
+
+            SetMessage(LabelStatus.Ok, $"Executed local command: {commandName} (see hw.txt for details)");
         }
-        hwWriter.Flush();
-
-
-        SetMessage(LabelStatus.Ok, $"Executed local command: {commandName} (see hw.txt for details)");
+        finally
+        {
+            computer.Close();
+        }
     }
 
     private async Task ManageServiceAsync(byte commandByte, string commandName)
